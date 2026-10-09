@@ -1,0 +1,5 @@
+# Excel / Office lock files
+~$*
+# Stata temp files
+*.stswp
+*.smcl.tmp
