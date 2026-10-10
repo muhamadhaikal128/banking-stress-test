@@ -5,7 +5,20 @@
 * 	Notes: The first phase is to determine global paths. We define the path for data source, Stata storage, and results storage.
 *	Paths below are set for Haikal's computer. Do not put "//" comments at the end of "global" lines (causes r(198) if no space before "//").
 
-global base "C:\Users\LENOVO05\OneDrive\Desktop\20260827_0301060601_W5_Banking Stress Test Materials (1)\20260827_0301060601_W5_Banking Stress Test Materials"
+* ---- Set base path by machine ----
+if "`c(username)'" == "LENOVO05" {
+    global base "C:/Users/LENOVO05/OneDrive/Desktop/20260827_0301060601_W5_Banking Stress Test Materials (1)/20260827_0301060601_W5_Banking Stress Test Materials"
+}
+else if "`c(username)'" == "setde" {
+    global base "C:/Users/setde/OneDrive/Documents/GitHub/banking-stress-test"
+}
+else {
+    di as error "Unknown user: `c(username)'. Add your path to the top of this do-file."
+    exit 198
+}
+
+cd "$base"
+di as text "Base path: $base"
 
 * Raw macro data (Solvency ST.xlsx)
 global source "$base\Stata"
