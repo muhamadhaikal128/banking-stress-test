@@ -19,6 +19,11 @@ global results "$base\output\fixed"
 * Forecast horizon (quarters) and failure threshold
 global horizon 4
 global car_min 8
+* Property-price effect on NPL (JUDGMENT, borrowed from Prospera): total effect on NPL (pp) of +1pp QoQ
+* property price growth, spread evenly over lags 1-4. -0.429 = sum of the d_property lag coefficients
+* in Prospera's NPL regression (2014-2024Q2). Our own data cannot identify it: IHPR never fell in sample
+* and the estimated sign is wrong. 0 = off (pure model).
+global e_prop -0.429
 
 cap mkdir "$data"
 cap mkdir "$results"
@@ -277,11 +282,16 @@ forval i=1/3{
 	gen nie_b`i'=cond(quarter<=max, non_int_exp, nie_r/100*asset_b`i')
 
 	*NPL modelling and forecasting*
-	* dynamic FE model: lagged NPL + GDP + BI rate. Property dropped: IHPR never fell in-sample
+	* dynamic FE model: lagged NPL + GDP + BI rate. Property is not estimated: IHPR never fell in-sample
 	* (min d_property +0.04), so its coefficient has the wrong sign and adverse shocks lowered NPL.
+	* Instead a judgmental property term ($e_prop, Prospera elasticity) is added as a STATIC component:
+	*   NPL = core + prop,  prop = e_prop/4 x (sum of d_property lags 1-4),
+	*   core follows the dynamic model (so the property term is not multiplied by NPL persistence).
 	* FIX: clustered SEs instead of a 10-replication bootstrap (point estimates are identical)
+	gen double prop`i'=cond($e_prop==0, 0, ($e_prop/4)*(l.d_property+l2.d_property+l3.d_property+l4.d_property))
+	gen double nplc`i'=npl_r-prop`i'
 	gen npl_b`i'=npl_r
-	qui xtreg npl_b`i' l.npl_b`i' l.gdp l2.gdp l3.gdp l4.gdp l.reporate l2.reporate l3.reporate l4.reporate, fe vce(cluster bank_id)
+	qui xtreg nplc`i' l.nplc`i' l.gdp l2.gdp l3.gdp l4.gdp l.reporate l2.reporate l3.reporate l4.reporate, fe vce(cluster bank_id)
 	* recursive forecast: each quarter uses the previous quarter's forecast NPL
 	* (xbu is only defined in-sample, so carry each bank's fixed effect u_i forward explicitly).
 	* With u_i each bank adjusts gradually (rho ~ 0.8) toward its through-the-cycle NPL; NPL is at a
@@ -295,12 +305,14 @@ forval i=1/3{
 	forval q=`=max[1]+1'/`r(max)'{
 		predict double npl_tmp, xb
 		* FIX: a linear model can go below zero; floor at 0
-		replace npl_b`i'=cond(missing(npl_tmp+npl_ui), ., max(npl_tmp+npl_ui, 0)) if quarter==`q'
+		* NPL = forecast core + property term; the core carried to the next quarter is NPL - property term
+		replace npl_b`i'=cond(missing(npl_tmp+npl_ui+prop`i'), ., max(npl_tmp+npl_ui+prop`i', 0)) if quarter==`q'
+		replace nplc`i'=npl_b`i'-prop`i' if quarter==`q'
 		drop npl_tmp
 	}
 	* in-sample fitted NPL incl. bank effect (for the fit chart)
-	gen npl_i`i'=npl_fit+npl_u0 if quarter<=max
-	drop npl_fit npl_u npl_ui npl_u0
+	gen npl_i`i'=npl_fit+npl_u0+prop`i' if quarter<=max
+	drop npl_fit npl_u npl_ui npl_u0 nplc`i'
 
 	label variable npl_b`i' "NPL ratio scenario `i'"
 
@@ -602,21 +614,21 @@ save "$data\bank.dta", replace
 
 		* Assumptions used in this run
 		clear
-		set obs 9
+		set obs 10
 		gen str60 parameter=""
 		gen double value=.
 		local k=0
-		foreach p in payout k_stress npl_b0 npl_b1 w_srbi D_sbn{
+		foreach p in payout k_stress npl_b0 npl_b1 w_srbi D_sbn e_prop{
 			local ++k
 			replace parameter="`p'" in `k'
 			replace value=${`p'} in `k'
 		}
-		replace parameter="tax_rate" in 7
-		replace value=$tax_rate in 7
-		replace parameter="base quarter (last actual)" in 8
-		replace value=`base' in 8
-		replace parameter="forecast quarters" in 9
-		replace value=`last'-`base' in 9
+		replace parameter="tax_rate" in 8
+		replace value=$tax_rate in 8
+		replace parameter="base quarter (last actual)" in 9
+		replace value=`base' in 9
+		replace parameter="forecast quarters" in 10
+		replace value=`last'-`base' in 10
 		export excel using "$xls", sheet("Assumptions", replace) firstrow(variables)
 	restore
 	di "Excel summary written to $xls"
@@ -642,3 +654,6 @@ save "$data\bank.dta", replace
 * 11. History shows reported net income; industry charts use aggregated (weighted) ratios;
 *     no hard-coded dates; lgraph (ssc) no longer needed.
 * 12. Failure = CAR below the minimum in ANY forecast quarter (forecast quarters only).
+* Model change (12 Oct 2026, not a fix):
+* 13. Judgmental property-price term in NPL ($e_prop = -0.429, Prospera's summed elasticity, evenly over
+*     lags 1-4), added as a static component on top of the dynamic NPL core. Set $e_prop 0 to switch off.

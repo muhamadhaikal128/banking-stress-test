@@ -1,31 +1,31 @@
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
       name:  main
-       log:  C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking
->  Stress Test Materials/output/logs/stress_test.log
+       log:  C:/Users/LENOVO05/github/banking-stress-test/output/logs/stress_tes
+> t.log
   log type:  text
- opened on:  10 Oct 2026, 21:16:34
+ opened on:  12 Oct 2026, 13:50:04
 
 . 
 . 
-. *****************************************************************************
-> **
-. *****************************************************************************
-> **
+. ******************************************************************************
+> *
+. ******************************************************************************
+> *
 . *****  PART: 01_import.do
-. *****************************************************************************
-> **
-. *****************************************************************************
-> **
+. ******************************************************************************
+> *
+. ******************************************************************************
+> *
 . 
-. *****************************************************************************
-> **
+. ******************************************************************************
+> *
 . * 01_import.do — raw Excel inputs -> intermediate datasets
 . *   intermediate/parameters.dta   model parameters (also set as globals $P_*)
-. *   intermediate/macro.dta        long: scen x quarter (history + scenario pa
-> th)
+. *   intermediate/macro.dta        long: scen x quarter (history + scenario pat
+> h)
 . *   intermediate/bank_raw.dta     bank-quarter panel from Bloomberg BQL
-. *****************************************************************************
-> **
+. ******************************************************************************
+> *
 . 
 . *----------------------------------------------------------------------------
 . * 1. Parameters sheet -> globals $P_<name>
@@ -53,8 +53,8 @@ value already numeric; no replace
   6. }
 
 . save "$inter/parameters.dta", replace
-file C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking
-    Stress Test Materials/intermediate/parameters.dta saved
+file C:/Users/LENOVO05/github/banking-stress-test/intermediate/parameters.dta
+    saved
 
 . 
 . *----------------------------------------------------------------------------
@@ -81,15 +81,15 @@ file C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking
 . tempfile hist
 
 . save `hist'
-file C:\Users\LENOVO05\AppData\Local\Temp\ST_8bcc_0000ci.tmp saved as .dta
+file C:\Users\LENOVO05\AppData\Local\Temp\ST_4248_00000j.tmp saved as .dta
     format
 
 . 
 . tempfile stack
 
 . forval s = 1/3 {
-  2.     import excel "$macro_xlsx", sheet("Scenario `s'") firstrow case(lower)
->  clear
+  2.     import excel "$macro_xlsx", sheet("Scenario `s'") firstrow case(lower) 
+> clear
   3.     keep quarter `mvars'
   4.     drop if missing(quarter)
   5.     assert quarter > $base_q
@@ -101,16 +101,16 @@ file C:\Users\LENOVO05\AppData\Local\Temp\ST_8bcc_0000ci.tmp saved as .dta
 (11 vars, 6 obs)
 (0 observations deleted)
 (variable forex was int, now double to accommodate using data's values)
-(file C:\Users\LENOVO05\AppData\Local\Temp\ST_8bcc_0000cj.tmp not found)
-file C:\Users\LENOVO05\AppData\Local\Temp\ST_8bcc_0000cj.tmp saved as .dta
+(file C:\Users\LENOVO05\AppData\Local\Temp\ST_4248_00000k.tmp not found)
+file C:\Users\LENOVO05\AppData\Local\Temp\ST_4248_00000k.tmp saved as .dta
     format
 (10 vars, 6 obs)
 (0 observations deleted)
-file C:\Users\LENOVO05\AppData\Local\Temp\ST_8bcc_0000cj.tmp saved as .dta
+file C:\Users\LENOVO05\AppData\Local\Temp\ST_4248_00000k.tmp saved as .dta
     format
 (10 vars, 6 obs)
 (0 observations deleted)
-file C:\Users\LENOVO05\AppData\Local\Temp\ST_8bcc_0000cj.tmp saved as .dta
+file C:\Users\LENOVO05\AppData\Local\Temp\ST_4248_00000k.tmp saved as .dta
     format
 
 . sort scen quarter
@@ -128,8 +128,8 @@ file C:\Users\LENOVO05\AppData\Local\Temp\ST_8bcc_0000cj.tmp saved as .dta
 . qui count if scen == 1 & quarter > $base_q
 
 . if r(N) < $horizon {
-.     di as err "Scenario sheets hold only " r(N) " quarters; horizon is $horiz
-> on"
+.     di as err "Scenario sheets hold only " r(N) " quarters; horizon is $horizo
+> n"
 .     exit 198
 . }
 
@@ -150,8 +150,7 @@ file C:\Users\LENOVO05\AppData\Local\Temp\ST_8bcc_0000cj.tmp saved as .dta
 . la var covid      "Loan-restructuring forbearance period"
 
 . save "$inter/macro.dta", replace
-file C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking
-    Stress Test Materials/intermediate/macro.dta saved
+file C:/Users/LENOVO05/github/banking-stress-test/intermediate/macro.dta saved
 
 . 
 . *----------------------------------------------------------------------------
@@ -170,11 +169,11 @@ file C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking
   7.         continue
   8.     }
   9.     local new = lower(substr(`"`lab'"', 1, `p' - 1))
- 10.     capture confirm new variable `new'      // "new": no abbreviation matc
-> hing
+ 10.     capture confirm new variable `new'      // "new": no abbreviation match
+> ing
  11.     if !_rc rename `v' `new'
- 12.     else    drop `v'                        // duplicate query of the same
->  item
+ 12.     else    drop `v'                        // duplicate query of the same 
+> item
  13. }
 
 . drop if missing(id) | missing(bs_sh_out)
@@ -189,8 +188,7 @@ file C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking
 . gen bank = substr(id, 1, 4)
 
 . 
-. * fill=prev repeats the last statement when a period is unreported: keep firs
-> t
+. * fill=prev repeats the last statement when a period is unreported: keep first
 . bysort bank quarter: keep if _n == 1
 (70 observations deleted)
 
@@ -211,46 +209,45 @@ file C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking
 . la var kbmi "KBMI group (capital-based bank class)"
 
 . save "$inter/bank_raw.dta", replace
-file C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking
-    Stress Test Materials/intermediate/bank_raw.dta saved
+file C:/Users/LENOVO05/github/banking-stress-test/intermediate/bank_raw.dta
+    saved
 
 . 
 . 
-. *****************************************************************************
-> **
-. *****************************************************************************
-> **
+. ******************************************************************************
+> *
+. ******************************************************************************
+> *
 . *****  PART: 02_prepare.do
-. *****************************************************************************
-> **
-. *****************************************************************************
-> **
+. ******************************************************************************
+> *
+. ******************************************************************************
+> *
 . 
-. *****************************************************************************
-> **
+. ******************************************************************************
+> *
 . * 02_prepare.do — bank panel cleaning and financial ratios
-. *   intermediate/bank_panel.dta   balanced bank-quarter panel + macro + ratio
-> s
+. *   intermediate/bank_panel.dta   balanced bank-quarter panel + macro + ratios
 . *
-. * Units: stocks and flows in IDR million; flows are quarterly (FA_PERIOD_TYPE
-> =Q).
+. * Units: stocks and flows in IDR million; flows are quarterly (FA_PERIOD_TYPE=
+> Q).
 . * Ratios in %, quarterly flows NOT annualised unless the name ends in _ann.
-. *****************************************************************************
-> **
+. ******************************************************************************
+> *
 . 
 . use "$inter/bank_raw.dta", clear
 
 . 
-. rename (bs_tot_asset bs_tot_loan bs_non_perform_loans bs_customer_deposits   
->  ///
->         bs_risk_weighted_assets bs_tier1_capital bs_tot_cap_fund             
->  ///
->         is_int_inc is_prov_for_loan_loss non_int_inc non_int_exp net_int_inc 
->  ///
->         net_income trading_secs_fa_at_fv_thru_pl av_sa_fa_at_fv_thru_ot_comp_
-> inc) ///
->        (asset loan npl_amt dep rwa tier1 cap int_inc prov nonii nonie nii    
->  ///
+. rename (bs_tot_asset bs_tot_loan bs_non_perform_loans bs_customer_deposits    
+> ///
+>         bs_risk_weighted_assets bs_tier1_capital bs_tot_cap_fund              
+> ///
+>         is_int_inc is_prov_for_loan_loss non_int_inc non_int_exp net_int_inc  
+> ///
+>         net_income trading_secs_fa_at_fv_thru_pl av_sa_fa_at_fv_thru_ot_comp_i
+> nc) ///
+>        (asset loan npl_amt dep rwa tier1 cap int_inc prov nonii nonie nii     
+> ///
 >         ni fvtpl fvoci)
 
 . 
@@ -281,7 +278,7 @@ Panel variable: bank_id (unbalanced)
 . tempfile hist
 
 . save `hist'
-file C:\Users\LENOVO05\AppData\Local\Temp\ST_8bcc_0000cl.tmp saved as .dta
+file C:\Users\LENOVO05\AppData\Local\Temp\ST_4248_00000m.tmp saved as .dta
     format
 
 . restore
@@ -307,8 +304,8 @@ Panel variable: bank_id (strongly balanced)
 . gen npl_r  = npl_amt / loan * 100
 (419 missing values generated)
 
-. gen prov_r = prov / loan * 100               // quarterly provision charge, %
->  loans
+. gen prov_r = prov / loan * 100               // quarterly provision charge, % 
+> loans
 (482 missing values generated)
 
 . gen nim    = nii / asset * 100               // quarterly, % assets
@@ -426,36 +423,35 @@ Panel variable: bank_id (strongly balanced)
   (15,134 bytes saved)
 
 . save "$inter/bank_panel.dta", replace
-file C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking
-    Stress Test Materials/intermediate/bank_panel.dta saved
+file C:/Users/LENOVO05/github/banking-stress-test/intermediate/bank_panel.dta
+    saved
 
 . 
 . 
-. *****************************************************************************
-> **
-. *****************************************************************************
-> **
+. ******************************************************************************
+> *
+. ******************************************************************************
+> *
 . *****  PART: 03_satellite.do
-. *****************************************************************************
-> **
-. *****************************************************************************
-> **
+. ******************************************************************************
+> *
+. ******************************************************************************
+> *
 . 
-. *****************************************************************************
-> **
+. ******************************************************************************
+> *
 . * 03_satellite.do — credit-risk satellite models
 . *
 . * NPL (dynamic, logit, bank FE, asset-weighted):
 . *   logit(NPL)_it = a_i + rho*logit(NPL)_i,t-1 + bg*gdp4_t + br*rep4_t
 . *                   + bp*prp4_t + bc*covid_t + e_it
-. *   gdp4/rep4/prp4 = average of lags 1-4 of GDP growth, BI rate, property pri
-> ces.
+. *   gdp4/rep4/prp4 = average of lags 1-4 of GDP growth, BI rate, property pric
+> es.
 . *
 . * Provision charge (% loans, quarterly, bank FE, asset-weighted):
 . *   prov_it = c_i + g1*NPL_it + g2*dNPL_it + gc*covid_t + u_it
 . *
-. * Design choices vs the handbook specification (12 separate lags, unweighted)
-> :
+. * Design choices vs the handbook specification (12 separate lags, unweighted):
 . *   - handbook spec explains ~2% of within-bank NPL variation; the dynamic
 . *     logit explains ~90% and every macro sign is economically correct
 . *   - asset weights: the policy object is the industry, dominated by KBMI 3-4
@@ -463,13 +459,13 @@ file C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking
 . *     excluded from estimation
 . *   - covid dummy absorbs the 2020-22 OJK restructuring forbearance
 . *   - forecasts are anchored with a bank-specific intercept correction
-. *     (mean residual of the last 4 quarters) so paths start at the actual lev
-> el
+. *     (mean residual of the last 4 quarters) so paths start at the actual leve
+> l
 . *
 . * Outputs: intermediate/sat_coefs.dta, intermediate/bank_anchor.dta,
 . *          intermediate/backtest.dta, output/tables/satellite_models.xlsx
-. *****************************************************************************
-> **
+. ******************************************************************************
+> *
 . 
 . use "$inter/bank_panel.dta", clear
 
@@ -513,8 +509,8 @@ Panel variable: bank_id (strongly balanced)
 . *----------------------------------------------------------------------------
 . * 1. Estimation
 . *----------------------------------------------------------------------------
-. areg lnpl L.lnpl gdp4 rep4 prp4 covid [aw=w] if est & !brk & !L.brk,         
->  ///
+. areg lnpl L.lnpl gdp4 rep4 prp4 covid [aw=w] if est & !brk & !L.brk,          
+> ///
 >      absorb(bank_id) vce(cluster bank_id)
 (sum of wgt is 308,807,607,573.6)
 
@@ -544,8 +540,8 @@ Absorbed variable: bank_id                         No. of categories =      46
 . estimates store npl
 
 . estimates save "$inter/est_npl", replace
-file C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking Stress 
-> Test Materials/intermediate/est_npl.ster saved
+file C:/Users/LENOVO05/github/banking-stress-test/intermediate/est_npl.ster save
+> d
 
 . foreach v in gdp4 rep4 prp4 covid {
   2.     scalar b_`v' = _b[`v']
@@ -558,8 +554,8 @@ file C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking Stress
 . local npl_r2 = e(r2)
 
 . 
-. areg prov_w npl_m D.npl_m covid [aw=w] if est,                               
->   ///
+. areg prov_w npl_m D.npl_m covid [aw=w] if est,                                
+>  ///
 >      absorb(bank_id) vce(cluster bank_id)
 (sum of wgt is 305,419,332,610.6)
 
@@ -587,8 +583,8 @@ Absorbed variable: bank_id                          No. of categories =     46
 . estimates store prov
 
 . estimates save "$inter/est_prov", replace
-file C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking Stress 
-> Test Materials/intermediate/est_prov.ster saved
+file C:/Users/LENOVO05/github/banking-stress-test/intermediate/est_prov.ster sav
+> ed
 
 . scalar g1 = _b[npl_m]
 
@@ -610,8 +606,8 @@ file C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking Stress
 
 .     clear
 
-.     local rows "npl:L.lnpl npl:gdp4 npl:rep4 npl:prp4 npl:covid prov:npl_m pr
-> ov:D.npl_m prov:covid"
+.     local rows "npl:L.lnpl npl:gdp4 npl:rep4 npl:prp4 npl:covid prov:npl_m pro
+> v:D.npl_m prov:covid"
 
 .     local n : word count `rows'
 
@@ -637,8 +633,8 @@ Number of observations (_N) was 0, now 8.
   2.         local r : word `i' of `rows'
   3.         gettoken m v : r, parse(":")
   4.         local v = substr("`v'", 2, .)
-  5.         replace model = cond("`m'" == "npl", "logit NPL", "Provision") in 
-> `i'
+  5.         replace model = cond("`m'" == "npl", "logit NPL", "Provision") in `
+> i'
   6.         replace regressor = "`v'" in `i'
   7.         local c = colnumb(`m'_b, "`v'")
   8.         replace coef   = `m'_b[1, `c'] in `i'
@@ -686,15 +682,15 @@ Number of observations (_N) was 0, now 8.
 (1 real change made)
 (1 real change made)
 
-.     export excel using "$output/tables/satellite_models.xlsx",               
->  ///
+.     export excel using "$output/tables/satellite_models.xlsx",                
+> ///
 >            sheet("Coefficients", replace) firstrow(variables)
-file C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking Stress 
-> Test Materials/output/tables/satellite_models.xlsx saved
+file C:/Users/LENOVO05/github/banking-stress-test/output/tables/satellite_models
+> .xlsx saved
 
 .     save "$inter/sat_coefs.dta", replace
-file C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking
-    Stress Test Materials/intermediate/sat_coefs.dta saved
+file C:/Users/LENOVO05/github/banking-stress-test/intermediate/sat_coefs.dta
+    saved
 
 . restore
 
@@ -704,8 +700,8 @@ file C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking
 . *    c_npl  = mean[ lnpl - rho*L.lnpl - Xb ]           (covid term = 0 ahead)
 . *    c_prov = mean[ prov_w - g1*NPL - g2*dNPL ]
 . *----------------------------------------------------------------------------
-. gen r_npl  = lnpl - rho*L.lnpl - b_gdp4*gdp4 - b_rep4*rep4 - b_prp4*prp4     
->  ///
+. gen r_npl  = lnpl - rho*L.lnpl - b_gdp4*gdp4 - b_rep4*rep4 - b_prp4*prp4      
+> ///
 >              - b_covid*covid if !brk
 (481 missing values generated)
 
@@ -714,14 +710,14 @@ file C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking
 
 . 
 . foreach r in npl prov {
-  2.     bysort bank_id (quarter): egen c_`r' = mean(r_`r')                    
->      ///
+  2.     bysort bank_id (quarter): egen c_`r' = mean(r_`r')                     
+>     ///
 >         if quarter > $base_q - 4 & quarter <= $base_q
   3.     bysort bank_id (c_`r'): replace c_`r' = c_`r'[1]
   4.     bysort bank_id: egen c_`r'_all = mean(r_`r') if est
   5.     bysort bank_id (c_`r'_all): replace c_`r'_all = c_`r'_all[1]
-  6.     replace c_`r' = c_`r'_all if missing(c_`r')    // no clean recent quar
-> ter
+  6.     replace c_`r' = c_`r'_all if missing(c_`r')    // no clean recent quart
+> er
   7. }
 (1,978 missing values generated)
 (1978 real changes made)
@@ -742,8 +738,8 @@ file C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking
 .     keep bank_id c_npl c_prov
 
 .     save "$inter/bank_anchor.dta", replace
-file C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking
-    Stress Test Materials/intermediate/bank_anchor.dta saved
+file C:/Users/LENOVO05/github/banking-stress-test/intermediate/bank_anchor.dta
+    saved
 
 . restore
 
@@ -761,10 +757,10 @@ Panel variable: bank_id (strongly balanced)
  Time variable: quarter, 2014q4 to 2026q2
          Delta: 1 quarter
 
-. areg lnpl L.lnpl gdp4 rep4 prp4 covid [aw=w]                                 
->    ///
->      if quarter >= tq($est_start) & quarter <= `origin' & !brk & !L.brk,     
+. areg lnpl L.lnpl gdp4 rep4 prp4 covid [aw=w]                                  
 >   ///
+>      if quarter >= tq($est_start) & quarter <= `origin' & !brk & !L.brk,      
+>  ///
 >      absorb(bank_id) vce(cluster bank_id)
 (sum of wgt is 218,381,863,735.1)
 
@@ -793,13 +789,13 @@ Absorbed variable: bank_id                          No. of categories =     46
 
 . local bt_rho = _b[L.lnpl]
 
-. gen bt_r = lnpl - `bt_rho'*L.lnpl - _b[gdp4]*gdp4 - _b[rep4]*rep4            
->  ///
+. gen bt_r = lnpl - `bt_rho'*L.lnpl - _b[gdp4]*gdp4 - _b[rep4]*rep4             
+> ///
 >            - _b[prp4]*prp4 - _b[covid]*covid if !brk
 (481 missing values generated)
 
-. bysort bank_id: egen bt_c = mean(bt_r) if inrange(quarter, `origin' - 3, `ori
-> gin')
+. bysort bank_id: egen bt_c = mean(bt_r) if inrange(quarter, `origin' - 3, `orig
+> in')
 (1,982 missing values generated)
 
 . bysort bank_id (bt_c): replace bt_c = bt_c[1]
@@ -815,8 +811,8 @@ Panel variable: bank_id (strongly balanced)
 (2,117 missing values generated)
 
 . forval t = `=`origin' + 1'/$base_q {
-  2.     replace bt_lnpl = bt_c + `bt_rho'*L.bt_lnpl + _b[gdp4]*gdp4           
->      ///
+  2.     replace bt_lnpl = bt_c + `bt_rho'*L.bt_lnpl + _b[gdp4]*gdp4            
+>     ///
 >         + _b[rep4]*rep4 + _b[prp4]*prp4 + _b[covid]*covid if quarter == `t'
   3. }
 (45 real changes made)
@@ -854,14 +850,14 @@ Panel variable: bank_id (strongly balanced)
 . gen origin = `origin'
 
 . save "$inter/backtest.dta", replace
-file C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking
-    Stress Test Materials/intermediate/backtest.dta saved
+file C:/Users/LENOVO05/github/banking-stress-test/intermediate/backtest.dta
+    saved
 
-. export excel using "$output/tables/satellite_models.xlsx",                   
->  ///
+. export excel using "$output/tables/satellite_models.xlsx",                    
+> ///
 >        sheet("NPL_backtest", replace) firstrow(variables)
-file C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking Stress 
-> Test Materials/output/tables/satellite_models.xlsx saved
+file C:/Users/LENOVO05/github/banking-stress-test/output/tables/satellite_models
+> .xlsx saved
 
 . 
 . * parameters handed to the projection
@@ -880,42 +876,41 @@ NPL model: N=1371  R2=0.898  rho=0.911
 
 . 
 . 
-. *****************************************************************************
-> **
-. *****************************************************************************
-> **
+. ******************************************************************************
+> *
+. ******************************************************************************
+> *
 . *****  PART: 04_projection.do
-. *****************************************************************************
-> **
-. *****************************************************************************
-> **
+. ******************************************************************************
+> *
+. ******************************************************************************
+> *
 . 
-. *****************************************************************************
-> **
+. ******************************************************************************
+> *
 . * 04_projection.do — scenario projection of P&L and capital, bank by bank
 . *   intermediate/projection.dta   bank x scenario x quarter (base .. base+H)
 . *
 . * Each forecast quarter t (balance sheet grows with the scenario):
-. *   growth      g      = (1 + GDP yoy/100)^(1/4) - 1   assets, loans, deposit
-> s,
+. *   growth      g      = (1 + GDP yoy/100)^(1/4) - 1   assets, loans, deposits
+> ,
 . *                                                     RWA, securities
 . *   NPL         logit  = c_npl + rho*L.logit + b'X    -> NPL ratio, NPL stock
 . *   provisions  prov   = max(0, c_prov + g1*NPL + g2*dNPL) % loans
 . *               + overlay = k_stress * max(0, GDP_base - GDP_s) * NPL stock
 . *   NII                = NIM(4q avg)*assets
-. *                        + (beta_loan*loans - beta_dep*deposits)*d(BI rate)/4
-> 00
+. *                        + (beta_loan*loans - beta_dep*deposits)*d(BI rate)/40
+> 0
 . *   MTM loss           = -d_price/100 * securities * (1 - w_srbi)
 . *                        FVTPL share -> P&L, FVOCI share -> OCI (capital)
 . *   EBT = NII + non-int income - non-int expense - provisions - FVTPL loss
 . *   EAT = EBT - tax_rate * max(EBT, 0);  dividends = payout * max(EAT, 0)
 . *   capital_t = capital_t-1 + EAT - dividends - OCI loss   (Tier 1 and total)
-. *****************************************************************************
-> **
+. ******************************************************************************
+> *
 . 
 . *----------------------------------------------------------------------------
-. * 1. Scenario macro with 4-quarter lag averages, plus baseline GDP for the ga
-> p
+. * 1. Scenario macro with 4-quarter lag averages, plus baseline GDP for the gap
 . *----------------------------------------------------------------------------
 . use "$inter/macro.dta", clear
 
@@ -952,7 +947,7 @@ Panel variable: scen (strongly balanced)
 .     tempfile bl
 
 .     save `bl'
-file C:\Users\LENOVO05\AppData\Local\Temp\ST_8bcc_0000cp.tmp saved as .dta
+file C:\Users\LENOVO05\AppData\Local\Temp\ST_4248_00000q.tmp saved as .dta
     format
 
 . restore
@@ -973,7 +968,7 @@ file C:\Users\LENOVO05\AppData\Local\Temp\ST_8bcc_0000cp.tmp saved as .dta
 . tempfile mac
 
 . save `mac'
-file C:\Users\LENOVO05\AppData\Local\Temp\ST_8bcc_0000cq.tmp saved as .dta
+file C:\Users\LENOVO05\AppData\Local\Temp\ST_4248_00000r.tmp saved as .dta
     format
 
 . 
@@ -991,10 +986,10 @@ file C:\Users\LENOVO05\AppData\Local\Temp\ST_8bcc_0000cq.tmp saved as .dta
     Matched                                46  
     -----------------------------------------
 
-. keep bank bank_id kbmi quarter asset loan dep rwa tier1 cap sec_amt sec_sh   
->   ///
->      fvtpl_sh sec_flag npl_r lnpl nim_4q nonii_r_4q nonie_r_4q c_npl c_prov  
+. keep bank bank_id kbmi quarter asset loan dep rwa tier1 cap sec_amt sec_sh    
 >  ///
+>      fvtpl_sh sec_flag npl_r lnpl nim_4q nonii_r_4q nonie_r_4q c_npl c_prov   
+> ///
 >      ni prov                                 // actual base-quarter flows
 
 . 
@@ -1004,8 +999,8 @@ file C:\Users\LENOVO05\AppData\Local\Temp\ST_8bcc_0000cq.tmp saved as .dta
 
 . 
 . * banks lacking a usable starting point are dropped (and reported)
-. gen byte ok = !missing(asset, loan, dep, rwa, tier1, cap, lnpl, nim_4q, c_npl
-> , c_prov)
+. gen byte ok = !missing(asset, loan, dep, rwa, tier1, cap, lnpl, nim_4q, c_npl,
+>  c_prov)
 
 . qui levelsof bank if !ok, clean local(dropped)
 
@@ -1063,8 +1058,8 @@ Panel variable: pid (strongly balanced)
 (552 real changes made, 552 to missing)
 (552 real changes made, 552 to missing)
 
-. foreach v in npl_r npl_amt prov prov_r overlay nii nonii nonie mtm fvtpl_loss
->  ///
+. foreach v in npl_r npl_amt prov prov_r overlay nii nonii nonie mtm fvtpl_loss 
+> ///
 >              oci_loss ebt tax eat div {
   2.     cap gen double `v' = .
   3.     replace `v' = . if h > 0
@@ -1123,13 +1118,13 @@ Panel variable: pid (strongly balanced)
   7.     drop _g
   8. 
 .     * credit risk
-.     replace lnpl    = c_npl + $b_rho*L.lnpl + $b_gdp4*gdp4 + $b_rep4*rep4    
->  ///
+.     replace lnpl    = c_npl + $b_rho*L.lnpl + $b_gdp4*gdp4 + $b_rep4*rep4     
+> ///
 >                       + $b_prp4*prp4 if `q'
   9.     replace npl_r   = 100 * invlogit(lnpl) if `q'
  10.     replace npl_amt = npl_r / 100 * loan if `q'
- 11.     replace prov_r  = max(0, c_prov + $g1*npl_r + $g2*(npl_r - L.npl_r)) i
-> f `q'
+ 11.     replace prov_r  = max(0, c_prov + $g1*npl_r + $g2*(npl_r - L.npl_r)) if
+>  `q'
  12.     replace overlay = `k' * max(0, gdp_bl - gdp) * npl_amt if `q'
  13.     replace prov    = prov_r / 100 * loan + overlay if `q'
  14. 
@@ -1139,10 +1134,10 @@ Panel variable: pid (strongly balanced)
  16.     replace oci_loss   = (1 - fvtpl_sh) * mtm if `q'
  17. 
 .     * income statement
-.     replace nii   = nim_4q / 100 * asset                                     
->   ///
->                     + ($beta_loan*loan - $beta_dep*dep) * (reporate - repo_ba
-> se) / 400 if `q'
+.     replace nii   = nim_4q / 100 * asset                                      
+>  ///
+>                     + ($beta_loan*loan - $beta_dep*dep) * (reporate - repo_bas
+> e) / 400 if `q'
  18.     replace nonii = nonii_r_4q / 100 * asset if `q'
  19.     replace nonie = nonie_r_4q / 100 * asset if `q'
  20.     replace ebt   = nii + nonii - nonie - prov - fvtpl_loss if `q'
@@ -1289,29 +1284,29 @@ Panel variable: pid (strongly balanced)
   (1,380 bytes saved)
 
 . save "$inter/projection.dta", replace
-file C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking
-    Stress Test Materials/intermediate/projection.dta saved
+file C:/Users/LENOVO05/github/banking-stress-test/intermediate/projection.dta
+    saved
 
 . 
 . 
-. *****************************************************************************
-> **
-. *****************************************************************************
-> **
+. ******************************************************************************
+> *
+. ******************************************************************************
+> *
 . *****  PART: 05_results.do
-. *****************************************************************************
-> **
-. *****************************************************************************
-> **
+. ******************************************************************************
+> *
+. ******************************************************************************
+> *
 . 
-. *****************************************************************************
-> **
+. ******************************************************************************
+> *
 . * 05_results.do — tables and figures
 . *   output/tables/stress_test_results.xlsx
 . *     Summary, Industry_path, KBMI_path, Bank, Failed_banks, Assumptions
 . *   output/figures/ (PNG charts)
-. *****************************************************************************
-> **
+. ******************************************************************************
+> *
 . 
 . local xlsx "$output/tables/stress_test_results.xlsx"
 
@@ -1329,11 +1324,11 @@ file C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking
 
 . local xl   "xline(`bq', lcolor(gs10) lpattern(dash))"
 
-. local leg  `"legend(order(1 "Baseline" 2 "Adverse 1" 3 "Adverse 2") rows(1) p
-> os(6))"'
+. local leg  `"legend(order(1 "Baseline" 2 "Adverse 1" 3 "Adverse 2") rows(1) po
+> s(6))"'
 
-. local gopt "graphregion(color(white)) plotregion(color(white)) ylabel(, angle
-> (0) format(%4.1f))"
+. local gopt "graphregion(color(white)) plotregion(color(white)) ylabel(, angle(
+> 0) format(%4.1f))"
 
 . 
 . * sums of levels / flows -> ratios (same formulas at every aggregation level)
@@ -1348,8 +1343,8 @@ file C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking
   6.     gen market_a = (fvtpl_loss + oci_loss) / asset * 100
   7. end
 
-. local sums cap tier1 rwa npl_amt loan eat asset prov fvtpl_loss oci_loss over
-> lay
+. local sums cap tier1 rwa npl_amt loan eat asset prov fvtpl_loss oci_loss overl
+> ay
 
 . 
 . *----------------------------------------------------------------------------
@@ -1366,7 +1361,7 @@ file C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking
 . tempfile ind
 
 . save `ind'
-file C:\Users\LENOVO05\AppData\Local\Temp\ST_8bcc_0000cr.tmp saved as .dta
+file C:\Users\LENOVO05\AppData\Local\Temp\ST_4248_00000s.tmp saved as .dta
     format
 
 . 
@@ -1461,8 +1456,9 @@ file C:\Users\LENOVO05\AppData\Local\Temp\ST_8bcc_0000cr.tmp saved as .dta
 . format quarter %tq
 
 . save "$inter/industry_path.dta", replace
-file C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking
-    Stress Test Materials/intermediate/industry_path.dta saved
+file
+    C:/Users/LENOVO05/github/banking-stress-test/intermediate/industry_path.dt
+    > a saved
 
 . 
 . preserve
@@ -1472,10 +1468,10 @@ file C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking
 
 .     keep scen quarter banks car t1r npl_r roa_ann credit_a market_a
 
-.     export excel using "`xlsx'", sheet("Industry_path", replace) firstrow(var
-> iables)
-file C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking Stress 
-> Test Materials/output/tables/stress_test_results.xlsx saved
+.     export excel using "`xlsx'", sheet("Industry_path", replace) firstrow(vari
+> ables)
+file C:/Users/LENOVO05/github/banking-stress-test/output/tables/stress_test_resu
+> lts.xlsx saved
 
 . restore
 
@@ -1486,25 +1482,29 @@ file C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking Stress
   3.     if "`v'" == "t1r"     local yt "Tier 1 capital (% of RWA)"
   4.     if "`v'" == "npl_r"   local yt "NPL ratio (% of loans)"
   5.     if "`v'" == "roa_ann" local yt "Net income (% of assets, annualised)"
-  6.     twoway (line `v' quarter if scen == 1, lcolor(`col1') lwidth(medthick)
-> )   ///
->            (line `v' quarter if scen == 2, lcolor(`col2') lwidth(medthick))  
->  ///
->            (line `v' quarter if scen == 3, lcolor(`col3') lwidth(medthick)), 
->  ///
->            `xl' `leg' `gopt' ytitle("`yt'") xtitle("")                       
+  6.     twoway (line `v' quarter if scen == 1, lcolor(`col1') lwidth(medthick))
 >    ///
+>            (line `v' quarter if scen == 2, lcolor(`col2') lwidth(medthick))   
+> ///
+>            (line `v' quarter if scen == 3, lcolor(`col3') lwidth(medthick)),  
+> ///
+>            `xl' `leg' `gopt' ytitle("`yt'") xtitle("")                        
+>   ///
 >            title("Industry: `yt'", size(medium))
   7.     graph export "`fig'/industry_`v'.png", replace width(1600)
   8. }
-file C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking Stress 
-> Test Materials/output/figures/industry_car.png written in PNG format
-file C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking Stress 
-> Test Materials/output/figures/industry_t1r.png written in PNG format
-file C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking Stress 
-> Test Materials/output/figures/industry_npl_r.png written in PNG format
-file C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking Stress 
-> Test Materials/output/figures/industry_roa_ann.png written in PNG format
+file
+    C:/Users/LENOVO05/github/banking-stress-test/output/figures/industry_car.p
+    > ng saved as PNG format
+file
+    C:/Users/LENOVO05/github/banking-stress-test/output/figures/industry_t1r.p
+    > ng saved as PNG format
+file
+    C:/Users/LENOVO05/github/banking-stress-test/output/figures/industry_npl_r
+    > .png saved as PNG format
+file
+    C:/Users/LENOVO05/github/banking-stress-test/output/figures/industry_roa_a
+    > nn.png saved as PNG format
 
 . 
 . * figure: cumulative loss composition over the horizon (% of assets)
@@ -1513,20 +1513,21 @@ file C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking Stress
 .     keep if quarter > `bq'
 (54 observations deleted)
 
-.     graph bar (sum) credit_a market_a, over(scen) stack                      
->   ///
->           bar(1, color(`col1')) bar(2, color(`col3'))                        
->   ///
->           legend(order(1 "Credit losses (provisions)" 2 "Market losses (MTM)"
-> ) rows(1) pos(6)) ///
->           ytitle("Cumulative, % of total assets") `gopt'                     
->   ///
->           title("Credit and market losses over the stress horizon", size(medi
-> um))
+.     graph bar (sum) credit_a market_a, over(scen) stack                       
+>  ///
+>           bar(1, color(`col1')) bar(2, color(`col3'))                         
+>  ///
+>           legend(order(1 "Credit losses (provisions)" 2 "Market losses (MTM)")
+>  rows(1) pos(6)) ///
+>           ytitle("Cumulative, % of total assets") `gopt'                      
+>  ///
+>           title("Credit and market losses over the stress horizon", size(mediu
+> m))
 
 .     graph export "`fig'/loss_composition.png", replace width(1600)
-file C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking Stress 
-> Test Materials/output/figures/loss_composition.png written in PNG format
+file
+    C:/Users/LENOVO05/github/banking-stress-test/output/figures/loss_compositi
+    > on.png saved as PNG format
 
 . restore
 
@@ -1553,7 +1554,7 @@ file C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking Stress
 . tempfile proj
 
 . save `proj'
-file C:\Users\LENOVO05\AppData\Local\Temp\ST_8bcc_0000cu.tmp saved as .dta
+file C:\Users\LENOVO05\AppData\Local\Temp\ST_4248_00000v.tmp saved as .dta
     format
 
 . 
@@ -1579,7 +1580,7 @@ file C:\Users\LENOVO05\AppData\Local\Temp\ST_8bcc_0000cu.tmp saved as .dta
 . tempfile cum
 
 . save `cum'
-file C:\Users\LENOVO05\AppData\Local\Temp\ST_8bcc_0000cv.tmp saved as .dta
+file C:\Users\LENOVO05\AppData\Local\Temp\ST_4248_00000w.tmp saved as .dta
     format
 
 . 
@@ -1619,8 +1620,8 @@ file C:\Users\LENOVO05\AppData\Local\Temp\ST_8bcc_0000cv.tmp saved as .dta
 
 .     gen fail_asset = asset * fail_any
 
-.     collapse (sum) banks_fail = fail_any fail_asset asset (count) banks = ban
-> k_id, by(scen)
+.     collapse (sum) banks_fail = fail_any fail_asset asset (count) banks = bank
+> _id, by(scen)
 
 .     gen fail_asset_sh = fail_asset / asset * 100
 
@@ -1629,7 +1630,7 @@ file C:\Users\LENOVO05\AppData\Local\Temp\ST_8bcc_0000cv.tmp saved as .dta
 .     tempfile f
 
 .     save `f'
-file C:\Users\LENOVO05\AppData\Local\Temp\ST_8bcc_0000cx.tmp saved as .dta
+file C:\Users\LENOVO05\AppData\Local\Temp\ST_4248_000010.tmp saved as .dta
     format
 
 . restore
@@ -1654,21 +1655,21 @@ file C:\Users\LENOVO05\AppData\Local\Temp\ST_8bcc_0000cx.tmp saved as .dta
 . drop scen
 
 . export excel using "`xlsx'", sheet("Summary", replace) firstrow(variables)
-file C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking Stress 
-> Test Materials/output/tables/stress_test_results.xlsx saved
+file C:/Users/LENOVO05/github/banking-stress-test/output/tables/stress_test_resu
+> lts.xlsx saved
 
-. list scenario car_start car_end car_min npl_end credit_loss_cap market_loss_c
-> ap ///
+. list scenario car_start car_end car_min npl_end credit_loss_cap market_loss_ca
+> p ///
 >      net_income_cap banks_fail, clean noobs abbrev(14)
 
-     scenario   car_start    car_end   car_min    npl_end   credit_loss_~p   ma
-> rket_loss_~p   net_income_cap   banks_fail  
-     Baseline     22.5325   23.14363   22.5325   2.065915         4.463241     
->     -.447294         15.76105            0  
-    Adverse 1     22.5325   22.85074   22.5325   2.071318         7.155233     
->       1.3792         12.80457            1  
-    Adverse 2     22.5325    22.4688   22.4688   2.156155         10.37815     
->     3.168993         9.139268            3  
+     scenario   car_start    car_end   car_min    npl_end   credit_loss_~p   mar
+> ket_loss_~p   net_income_cap   banks_fail  
+     Baseline     22.5325   23.14363   22.5325   2.065915         4.463241      
+>    -.447294         15.76105            0  
+    Adverse 1     22.5325   22.85074   22.5325   2.071318         7.155233      
+>      1.3792         12.80457            1  
+    Adverse 2     22.5325    22.4688   22.4688   2.156155         10.37815      
+>    3.168993         9.139268            3  
 
 . 
 . *----------------------------------------------------------------------------
@@ -1683,26 +1684,26 @@ file C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking Stress
 . keep kbmi scen quarter car t1r npl_r roa_ann credit_a market_a
 
 . export excel using "`xlsx'", sheet("KBMI_path", replace) firstrow(variables)
-file C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking Stress 
-> Test Materials/output/tables/stress_test_results.xlsx saved
+file C:/Users/LENOVO05/github/banking-stress-test/output/tables/stress_test_resu
+> lts.xlsx saved
 
 . forval b = 1/4 {
-  2.     twoway (line car quarter if scen == 1 & kbmi == `b', lcolor(`col1') lw
-> idth(medthick)) ///
->            (line car quarter if scen == 2 & kbmi == `b', lcolor(`col2') lwidt
-> h(medthick)) ///
->            (line car quarter if scen == 3 & kbmi == `b', lcolor(`col3') lwidt
-> h(medthick)), ///
->            `leg' `gopt' ytitle("CAR (%)") xtitle("") title("KBMI `b'", size(m
-> edium)) ///
+  2.     twoway (line car quarter if scen == 1 & kbmi == `b', lcolor(`col1') lwi
+> dth(medthick)) ///
+>            (line car quarter if scen == 2 & kbmi == `b', lcolor(`col2') lwidth
+> (medthick)) ///
+>            (line car quarter if scen == 3 & kbmi == `b', lcolor(`col3') lwidth
+> (medthick)), ///
+>            `leg' `gopt' ytitle("CAR (%)") xtitle("") title("KBMI `b'", size(me
+> dium)) ///
 >            name(k`b', replace) nodraw
   3. }
 
 . graph combine k1 k2 k3 k4, rows(2) graphregion(color(white))
 
 . graph export "`fig'/car_kbmi.png", replace width(1800)
-file C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking Stress 
-> Test Materials/output/figures/car_kbmi.png written in PNG format
+file C:/Users/LENOVO05/github/banking-stress-test/output/figures/car_kbmi.png
+    saved as PNG format
 
 . 
 . *----------------------------------------------------------------------------
@@ -1737,13 +1738,13 @@ file C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking Stress
 . keep if h == $horizon
 (552 observations deleted)
 
-. keep bank kbmi scen car_start car npl_r car_min credit_cap market_cap fail_an
-> y sec_flag
+. keep bank kbmi scen car_start car npl_r car_min credit_cap market_cap fail_any
+>  sec_flag
 
 . rename (car npl_r) (car_end npl_end)
 
-. reshape wide car_end npl_end car_min credit_cap market_cap fail_any, i(bank) 
-> j(scen)
+. reshape wide car_end npl_end car_min credit_cap market_cap fail_any, i(bank) j
+> (scen)
 (j = 1 2 3)
 
 Data                               Long   ->   Wide
@@ -1755,21 +1756,21 @@ xij variables:
                                 car_end   ->   car_end1 car_end2 car_end3
                                 npl_end   ->   npl_end1 npl_end2 npl_end3
                                 car_min   ->   car_min1 car_min2 car_min3
-                             credit_cap   ->   credit_cap1 credit_cap2 credit_c
-> ap3
-                             market_cap   ->   market_cap1 market_cap2 market_c
-> ap3
+                             credit_cap   ->   credit_cap1 credit_cap2 credit_ca
+> p3
+                             market_cap   ->   market_cap1 market_cap2 market_ca
+> p3
                                fail_any   ->   fail_any1 fail_any2 fail_any3
 -----------------------------------------------------------------------------
 
 . sort car_end3
 
-. order bank kbmi car_start car_end1 car_end2 car_end3 car_min3 npl_end1 npl_en
-> d2 npl_end3
+. order bank kbmi car_start car_end1 car_end2 car_end3 car_min3 npl_end1 npl_end
+> 2 npl_end3
 
 . export excel using "`xlsx'", sheet("Bank", replace) firstrow(variables)
-file C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking Stress 
-> Test Materials/output/tables/stress_test_results.xlsx saved
+file C:/Users/LENOVO05/github/banking-stress-test/output/tables/stress_test_resu
+> lts.xlsx saved
 
 . 
 . preserve
@@ -1777,52 +1778,53 @@ file C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking Stress
 .     keep if fail_any1 | fail_any2 | fail_any3
 (43 observations deleted)
 
-.     keep bank kbmi car_start car_end1 car_end2 car_end3 car_min3 credit_cap3 
-> market_cap3
+.     keep bank kbmi car_start car_end1 car_end2 car_end3 car_min3 credit_cap3 m
+> arket_cap3
 
 .     if _N == 0 {
 .         set obs 1
 .         replace bank = "none"
 .     }
 
-.     export excel using "`xlsx'", sheet("Failed_banks", replace) firstrow(vari
-> ables)
-file C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking Stress 
-> Test Materials/output/tables/stress_test_results.xlsx saved
+.     export excel using "`xlsx'", sheet("Failed_banks", replace) firstrow(varia
+> bles)
+file C:/Users/LENOVO05/github/banking-stress-test/output/tables/stress_test_resu
+> lts.xlsx saved
 
 .     list, clean noobs
 
-    bank   kbmi   car_st~t   car_end1   car_end2   car_end3   car_min3   credit
-> ~3   market~3  
-    BINA      1   15.25835   13.44453   7.997016   1.905844   1.905844   28.659
-> 16   57.30397  
-    BCIC      1   14.53171   14.29693   9.076931   3.434433   3.434433   27.667
-> 94   52.96189  
-    BBKP      2   16.99503   14.11468   11.19152   7.734709   7.734709   39.587
-> 79   7.645551  
+    bank   kbmi   car_st~t   car_end1   car_end2   car_end3   car_min3   credit~
+> 3   market~3  
+    BINA      1   15.25835   13.44453   7.997016   1.905844   1.905844   28.6591
+> 6   57.30397  
+    BCIC      1   14.53171   14.29693   9.076931   3.434433   3.434433   27.6679
+> 4   52.96189  
+    BBKP      2   16.99503   14.11468   11.19152   7.734709   7.734709   39.5877
+> 9   7.645551  
 
 . restore
 
 . 
-. twoway (scatter car_end3 car_start if car_end3 >= $car_min, mcolor(`col1'%70)
->  msize(small)) ///
->        (scatter car_end3 car_start if car_end3 <  $car_min, mcolor(`col3') ms
-> ize(medium) ///
->             mlabel(bank) mlabcolor(`col3') mlabsize(vsmall))                 
->   ///
->        (function y = x, range(5 95) lcolor(gs10) lpattern(dot)),             
->   ///
->        yline($car_min, lcolor(`col3') lpattern(dash))                        
->   ///
->        legend(order(1 "Pass" 2 "CAR < $car_min%") rows(1) pos(6)) `gopt'     
->   ///
->        xtitle("CAR `=string(`bq', "%tq")' (%)") ytitle("CAR end of Adverse 2 
-> (%)") ///
+. twoway (scatter car_end3 car_start if car_end3 >= $car_min, mcolor(`col1'%70) 
+> msize(small)) ///
+>        (scatter car_end3 car_start if car_end3 <  $car_min, mcolor(`col3') msi
+> ze(medium) ///
+>             mlabel(bank) mlabcolor(`col3') mlabsize(vsmall))                  
+>  ///
+>        (function y = x, range(5 95) lcolor(gs10) lpattern(dot)),              
+>  ///
+>        yline($car_min, lcolor(`col3') lpattern(dash))                         
+>  ///
+>        legend(order(1 "Pass" 2 "CAR < $car_min%") rows(1) pos(6)) `gopt'      
+>  ///
+>        xtitle("CAR `=string(`bq', "%tq")' (%)") ytitle("CAR end of Adverse 2 (
+> %)") ///
 >        title("Bank CAR: start vs end of Adverse 2", size(medium))
 
 . graph export "`fig'/bank_car_adverse2.png", replace width(1600)
-file C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking Stress 
-> Test Materials/output/figures/bank_car_adverse2.png written in PNG format
+file
+    C:/Users/LENOVO05/github/banking-stress-test/output/figures/bank_car_adver
+    > se2.png saved as PNG format
 
 . 
 . *----------------------------------------------------------------------------
@@ -1832,44 +1834,46 @@ file C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking Stress
 
 . local o = origin[1]
 
-. twoway (line npl_actual quarter, lcolor(black) lwidth(medthick))             
+. twoway (line npl_actual quarter, lcolor(black) lwidth(medthick))              
+> ///
+>        (line npl_forecast quarter, lcolor(`col3') lpattern(dash) lwidth(medthi
+> ck)), ///
+>        xline(`o', lcolor(gs10) lpattern(dash)) `gopt'                         
 >  ///
->        (line npl_forecast quarter, lcolor(`col3') lpattern(dash) lwidth(medth
-> ick)), ///
->        xline(`o', lcolor(gs10) lpattern(dash)) `gopt'                        
->   ///
->        legend(order(1 "Actual" 2 "Model forecast (actual macro)") rows(1) pos
-> (6)) ///
->        ytitle("Industry NPL ratio (%)") xtitle("")                           
->   ///
+>        legend(order(1 "Actual" 2 "Model forecast (actual macro)") rows(1) pos(
+> 6)) ///
+>        ytitle("Industry NPL ratio (%)") xtitle("")                            
+>  ///
 >        title("Out-of-sample NPL back-test", size(medium))
 
 . graph export "`fig'/npl_backtest.png", replace width(1600)
-file C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking Stress 
-> Test Materials/output/figures/npl_backtest.png written in PNG format
+file
+    C:/Users/LENOVO05/github/banking-stress-test/output/figures/npl_backtest.p
+    > ng saved as PNG format
 
 . 
 . use "$inter/macro.dta" if quarter >= tq(2023q1), clear
 
 . foreach v in gdp reporate d_property d_price {
   2.     local t : variable label `v'
-  3.     twoway (line `v' quarter if scen == 1, lcolor(`col1') lwidth(medthick)
-> )   ///
->            (line `v' quarter if scen == 2, lcolor(`col2') lwidth(medthick))  
->  ///
->            (line `v' quarter if scen == 3, lcolor(`col3') lwidth(medthick)), 
->  ///
->            `xl' `leg' `gopt' ytitle("") xtitle("") title("`t'", size(medsmall
-> )) ///
+  3.     twoway (line `v' quarter if scen == 1, lcolor(`col1') lwidth(medthick))
+>    ///
+>            (line `v' quarter if scen == 2, lcolor(`col2') lwidth(medthick))   
+> ///
+>            (line `v' quarter if scen == 3, lcolor(`col3') lwidth(medthick)),  
+> ///
+>            `xl' `leg' `gopt' ytitle("") xtitle("") title("`t'", size(medsmall)
+> ) ///
 >            name(m_`v', replace) nodraw
   4. }
 
-. graph combine m_gdp m_reporate m_d_property m_d_price, rows(2) graphregion(co
-> lor(white))
+. graph combine m_gdp m_reporate m_d_property m_d_price, rows(2) graphregion(col
+> or(white))
 
 . graph export "`fig'/macro_scenarios.png", replace width(1800)
-file C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking Stress 
-> Test Materials/output/figures/macro_scenarios.png written in PNG format
+file
+    C:/Users/LENOVO05/github/banking-stress-test/output/figures/macro_scenario
+    > s.png saved as PNG format
 
 . 
 . *----------------------------------------------------------------------------
@@ -1923,17 +1927,16 @@ file C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking Stress
 
 . use `asm', clear
 
-. export excel using "`xlsx'", sheet("Assumptions", replace) firstrow(variables
-> )
-file C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking Stress 
-> Test Materials/output/tables/stress_test_results.xlsx saved
+. export excel using "`xlsx'", sheet("Assumptions", replace) firstrow(variables)
+file C:/Users/LENOVO05/github/banking-stress-test/output/tables/stress_test_resu
+> lts.xlsx saved
 
 . 
 . 
 . log close main
       name:  main
-       log:  C:/Users/LENOVO05/OneDrive/Projects/20260827_0301060601_W5_Banking
->  Stress Test Materials/output/logs/stress_test.log
+       log:  C:/Users/LENOVO05/github/banking-stress-test/output/logs/stress_tes
+> t.log
   log type:  text
- closed on:  10 Oct 2026, 21:16:55
--------------------------------------------------------------------------------
+ closed on:  12 Oct 2026, 13:50:23
+--------------------------------------------------------------------------------
