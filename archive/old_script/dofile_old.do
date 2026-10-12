@@ -581,4 +581,3 @@ save "$data\bank.dta", replace
 		export excel using "$xls", sheet("Assumptions", replace) firstrow(variables)
 	restore
 	di "Excel summary written to $xls"
-
