@@ -19,6 +19,9 @@ global results "$base\output\fixed"
 * Forecast horizon (quarters) and failure threshold
 global horizon 4
 global car_min 8
+* Himbara group: state-owned banks (BRI, Mandiri, BNI, BTN) plus BSI (BRIS, majority state-owned via
+* Mandiri/BRI/BNI; not a formal Himbara member, included by choice)
+global himbara "BBRI BMRI BBNI BBTN BRIS"
 * Property-price effect on NPL (JUDGMENT, borrowed from Prospera): total effect on NPL (pp) of +1pp QoQ
 * property price growth, spread evenly over lags 1-4. -0.429 = sum of the d_property lag coefficients
 * in Prospera's NPL regression (2014-2024Q2). Our own data cannot identify it: IHPR never fell in sample
@@ -134,6 +137,12 @@ xtset bank_id quarter
 bys bank_id (quarter): replace bank=bank[_n-1] if bank==""
 bys bank_id (quarter): replace kbmi=kbmi[_n-1] if missing(kbmi)
 xtset bank_id quarter
+* state-owned banks (Himbara), for the Himbara vs non-Himbara results
+gen byte himbara=0
+foreach t of global himbara {
+	replace himbara=1 if bank=="`t'"
+}
+la var himbara "Himbara (state-owned bank)"
 
 gen npl_r=bs_non_perform_loans/bs_tot_loan*100
 label variable npl_r "NPL ratio"
@@ -483,6 +492,30 @@ save "$data\bank.dta", replace
 		graph export "$results\\`s'_kbmi.png", as(png) replace width(1800)
 	}
 
+*3b. Himbara vs non-Himbara results
+	forval h=1(-1)0{
+		local gl=cond(`h'==1,"Himbara","Non-Himbara")
+		preserve
+			keep if himbara==`h' & year>=2022
+			collapse (sum) nplamt_b* loan_b* rwa_b* tier1_b* cap_b* eat_b* asset_b*, by(quarter)
+			forval i=1/3{
+				gen npl_`i'=nplamt_b`i'/loan_b`i'*100
+				gen car_`i'=cap_b`i'/rwa_b`i'*100
+				gen tr1_`i'=tier1_b`i'/rwa_b`i'*100
+				gen eat_`i'=eat_b`i'/asset_b`i'*100
+			}
+			plot3 npl, ytitle("NPL (%)") title("`gl'") file("$results\npl_scenario_him`h'") save opts(`leg' `gop')
+			plot3 car, ytitle("CAR (%)") title("`gl'") file("$results\car_scenario_him`h'") save opts(`leg' `gop')
+			plot3 tr1, ytitle("Tier 1 Capital (%)") title("`gl'") file("$results\tr1_scenario_him`h'") save opts(`leg' `gop')
+			plot3 eat, ytitle("Net income (%)") title("`gl'") file("$results\eat_scenario_him`h'") save opts(`leg' `gop')
+		restore
+	}
+	foreach s in npl car tr1 eat{
+		graph combine "$results\\`s'_scenario_him1.gph" "$results\\`s'_scenario_him0.gph", ///
+			row(1) ycommon iscale(0.7) graphregion(color(white))
+		graph export "$results\\`s'_himbara.png", as(png) replace width(1800)
+	}
+
 *4.	Failed banks
 	preserve
 		forval i=1/3{
@@ -557,6 +590,56 @@ save "$data\bank.dta", replace
 		export excel using "$xls", sheet("Industry_path", replace) firstrow(variables)
 	restore
 
+	* Groups: Himbara vs non-Himbara and KBMI 1-4 (same definitions as the industry figures)
+	preserve
+		gen str12 group=cond(himbara==1,"Himbara","Non-Himbara")
+		tempfile gsrc
+		save `gsrc'
+		replace group="KBMI "+string(kbmi)
+		append using `gsrc'
+		* a bank fails if CAR < minimum in any forecast quarter; counted once per bank (base-quarter row)
+		bys group bank_id (quarter): gen byte first=_n==1
+		forval i=1/3{
+			bys group bank_id: egen byte fl`i'=max(car_b`i'<$car_min & quarter>`base' & !missing(car_b`i'))
+			gen byte nfail`i'=fl`i'*first
+		}
+		collapse (sum) cap_b* tier1_b* rwa_b* eat_b* asset_b* loan_b* cl_b* loss_b* nplamt_b* nfail* ///
+			(count) banks=bank_id, by(group quarter)
+		gen str6 qtr=string(quarter,"%tq")
+		gen byte ord=cond(group=="Himbara",1,cond(group=="Non-Himbara",2,2+real(substr(group,6,1))))
+		sort ord quarter
+		forval i=1/3{
+			gen car_s`i'=cap_b`i'/rwa_b`i'*100
+			gen t1_s`i'=tier1_b`i'/rwa_b`i'*100
+			gen npl_s`i'=nplamt_b`i'/loan_b`i'*100
+		}
+		export excel group qtr banks car_s* t1_s* npl_s* using "$xls", sheet("Group_path", replace) firstrow(variables)
+
+		* one row per group x scenario; losses and income cumulative, % of the group's starting capital
+		bys ord (quarter): gen double K0=cap_b1[1]
+		forval i=1/3{
+			bys ord (quarter): gen car_start`i'=car_s`i'[1]
+			bys ord (quarter): gen car_end`i'=car_s`i'[_N]
+			bys ord: egen car_min`i'=min(cond(quarter>`base', car_s`i', .))
+			bys ord (quarter): gen t1_end`i'=t1_s`i'[_N]
+			bys ord (quarter): gen npl_start`i'=npl_s`i'[1]
+			bys ord (quarter): gen npl_end`i'=npl_s`i'[_N]
+			bys ord: egen credit_loss_cap`i'=total(cond(quarter>`base', cl_b`i'/K0*100, .))
+			bys ord: egen market_loss_cap`i'=total(cond(quarter>`base', loss_b`i'/K0*100, .))
+			bys ord: egen net_income_cap`i'=total(cond(quarter>`base', eat_b`i'/K0*100, .))
+			bys ord: egen banks_car_below8`i'=total(nfail`i')
+		}
+		keep if quarter==`last'
+		keep group ord banks car_start? car_end? car_min? t1_end? npl_start? npl_end? credit_loss_cap? market_loss_cap? net_income_cap? banks_car_below8?
+		reshape long car_start car_end car_min t1_end npl_start npl_end credit_loss_cap market_loss_cap net_income_cap banks_car_below8, i(ord) j(s)
+		gen str10 scenario=cond(s==1,"Baseline",cond(s==2,"Adverse 1","Adverse 2"))
+		sort ord s
+		order group scenario banks
+		drop ord s
+		export excel using "$xls", sheet("Group_summary", replace) firstrow(variables)
+		list group scenario car_start car_end car_min npl_end credit_loss_cap banks_car_below8 if strpos(group,"KBMI")==0, clean noobs
+	restore
+
 	* Bank level: CAR at start and end of horizon, cumulative losses in % of own starting capital
 	preserve
 		bys bank_id (quarter): gen cap0=cap_b1[1]
@@ -574,8 +657,8 @@ save "$data\bank.dta", replace
 			gen market_loss_cap_s`i'=cum_ml`i'/cap0*100
 			rename car_b`i' car_end_s`i'
 		}
-		keep bank kbmi car_start car_end_s* car_min_s* npl_start sec_cap sec_flag credit_loss_cap_s* market_loss_cap_s*
-		order bank kbmi car_start car_end_s1 car_end_s2 car_end_s3 car_min_s* npl_start sec_cap sec_flag credit_loss_cap_s* market_loss_cap_s*
+		keep bank kbmi himbara car_start car_end_s* car_min_s* npl_start sec_cap sec_flag credit_loss_cap_s* market_loss_cap_s*
+		order bank kbmi himbara car_start car_end_s1 car_end_s2 car_end_s3 car_min_s* npl_start sec_cap sec_flag credit_loss_cap_s* market_loss_cap_s*
 		sort car_end_s3
 		* FIX: a bank fails if CAR drops below the minimum in ANY forecast quarter, not only the last
 		forval i=1/3{
