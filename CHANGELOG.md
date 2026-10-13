@@ -11,7 +11,7 @@ results. For how to run the model, see `README.md`.
 | **v1** | `archive/Stata/dofile.do` | 4 Oct 2026 | Original handbook model (2024Q2 setup). Archived. |
 | **v2** | `archive/old_script/dofile_old.do` | 9 Oct 2026 | Updated model; produced everything in `archive/Result/` incl. `stress_test_summary.xlsx`. Archived. |
 | **v3** | `script/dofile_fixed.do` | 12 Oct 2026 | **Current model.** v2 with bugs fixed. Outputs in `intermediate/fixed/` and `output/fixed/`. |
-| alt | `script/00_master.do` … `05_results.do` (= `script/stress_test_full.do`) | 10 Oct 2026 | Separate logit-based model built for comparison. Not the main line (see the "Alternative model" section below). |
+| alt | `archive/alt_model/script/00_master.do` … `05_results.do` (= `stress_test_full.do`) | 10 Oct 2026 | Separate logit-based model built for comparison. Archived on 13 Oct 2026 (see below). |
 
 Data vintage for v2 and v3: bank data to **2026Q2** (Bloomberg, sheet `Output Sheet (Copy)`),
 scenarios **2026Q3–2027Q2**, 45 listed banks.
@@ -168,6 +168,21 @@ Alternatives tested with Adverse 1 property at 67% and 75% of Adverse 2: CAR is 
 Remaining scenario points, not changed: baseline UST 10Y jumps from 4.47 to 4.96 in the first quarter;
 the Adverse 2 UST path (7.3% by 27Q2) is extreme and should be described as a tail scenario; the property
 shock is set by judgment (about 8σ of IHPR history, against about 2σ for the other variables).
+
+### One official model; outputs grouped; alternative model archived (13 Oct 2026)
+
+- **v3 (`script/dofile_fixed.do`) is the only official model.** The alternative logit model gave
+  different numbers in a parallel `output/figures/` folder (e.g. KBMI 4 CAR *rose* in every scenario,
+  because it grows RWA with real rather than nominal GDP). Its scripts and outputs moved to
+  `archive/alt_model/{script,intermediate,output}`, and its paths now point there.
+- **v3 now produces every chart the alternative model had:** `macro_scenarios.png`,
+  `bank_car_adverse2.png`, `industry_roa_ann.png` (annualised ROA) and `npl_backtest.png` (the v3 NPL
+  model estimated to 2024Q2, forecast 8 quarters with actual macro). **Back-test result:** mean
+  absolute error 0.30 pp, at most 0.39 pp. The model over-predicts (forecast about 2.45% against an
+  actual of about 2.1%) because banks revert to their through-the-cycle NPL. The alternative logit
+  model, anchored on recent quarters, tracked within ±0.08 pp but responds less to stress.
+- **`output/fixed/` is grouped:** `1_macro/`, `2_industry/`, `3_kbmi/`, `4_himbara/`, `5_banks/`,
+  `6_model_checks/`, `gph/` (Stata working graphs). `stress_test_summary.xlsx` stays at the top.
 
 ### Output addition: Himbara vs non-Himbara and group tables (13 Oct 2026)
 

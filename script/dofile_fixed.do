@@ -30,6 +30,18 @@ global e_prop -0.429
 
 cap mkdir "$data"
 cap mkdir "$results"
+* output subfolders
+global f_macro "$results\1_macro"
+global f_ind   "$results\2_industry"
+global f_kbmi  "$results\3_kbmi"
+global f_him   "$results\4_himbara"
+global f_bank  "$results\5_banks"
+global f_chk   "$results\6_model_checks"
+global gph     "$results\gph"
+foreach d in f_macro f_ind f_kbmi f_him f_bank f_chk gph {
+	cap mkdir "${`d'}"
+}
+
 
 * Adjustable assumptions: Solvency ST.xlsx, sheet Parameters (column parameter = global name, value)
 cap import excel "$source\Solvency ST.xlsx", sheet("Parameters") firstrow case(lower) clear
@@ -434,7 +446,51 @@ save "$data\bank.dta", replace
 		gen npl_fitted=nplamt_f/loan_a*100
 		twoway (line npl_actual quarter, lcolor(black) lwidth(medthick)) (line npl_fitted quarter, lcolor(maroon) lpattern(dash) lwidth(medthick)), ///
 			ytitle("NPL (%)") xtitle("Quarter") legend(order(1 "Actual" 2 "Fitted") pos(6) row(1) size(small)) graphregion(color(white))
-		graph export "$results\npl_predict.png", as(png) replace width(1600)
+		graph export "$f_chk\npl_predict.png", as(png) replace width(1600)
+	restore
+
+*1b. NPL out-of-sample back-test: same NPL model (core + property term), estimated up to base-8,
+*    forecast recursively for 8 quarters with ACTUAL macro; loan-weighted, reporting breaks excluded
+	preserve
+		keep bank_id quarter npl_r bs_tot_loan nbrk
+		keep if quarter<=`base'
+		merge m:1 quarter using "$data\macro.dta", keepusing(gdp reporate d_property) keep(match master) nogen
+		xtset bank_id quarter
+		local o=`base'-8
+		gen double prop=cond($e_prop==0, 0, ($e_prop/4)*(l.d_property+l2.d_property+l3.d_property+l4.d_property))
+		gen double nplc=npl_r-prop
+		qui xtreg nplc l.nplc l(1/4).gdp l(1/4).reporate if quarter<=`o', fe
+		predict double u, u
+		bys bank_id: egen double ui=max(u)
+		gen double btc=nplc if quarter==`o'
+		xtset bank_id quarter
+		forval q=`=`o'+1'/`base'{
+			replace btc=_b[_cons]+ui+_b[L.nplc]*l.btc ///
+				+_b[L.gdp]*l.gdp+_b[L2.gdp]*l2.gdp+_b[L3.gdp]*l3.gdp+_b[L4.gdp]*l4.gdp ///
+				+_b[L.reporate]*l.reporate+_b[L2.reporate]*l2.reporate+_b[L3.reporate]*l3.reporate+_b[L4.reporate]*l4.reporate ///
+				if quarter==`q'
+		}
+		gen double bt=max(btc+prop, 0) if quarter>`o' & !missing(btc)
+		keep if quarter>=`o'-8
+		gen ok=!nbrk & !missing(npl_r) & (quarter<=`o' | !missing(bt))
+		gen double act_amt=npl_r/100*bs_tot_loan if ok
+		gen double fc_amt=cond(quarter==`o', npl_r, bt)/100*bs_tot_loan if ok & quarter>=`o'
+		gen double loan_ok=bs_tot_loan if ok
+		collapse (sum) act_amt fc_amt loan_ok, by(quarter)
+		gen npl_actual=act_amt/loan_ok*100
+		gen npl_forecast=fc_amt/loan_ok*100 if quarter>=`o'
+		qui sum npl_actual if quarter>`o'
+		local ma=r(mean)
+		gen absdev=abs(npl_forecast-npl_actual) if quarter>`o'
+		qui sum absdev
+		di "NPL back-test (8 quarters after " %tq `o' "): mean abs error " %5.2f r(mean) " pp, max " %5.2f r(max) " pp"
+		format quarter %tq
+		twoway (line npl_actual quarter, lcolor(black) lwidth(medthick)) ///
+		       (line npl_forecast quarter, lcolor(maroon) lpattern(dash) lwidth(medthick)), ///
+		       xline(`o', lcolor(gs10) lpattern(shortdash)) graphregion(color(white)) ///
+		       ytitle("Industry NPL (%)") xtitle("Quarter") ///
+		       legend(order(1 "Actual" 2 "Model forecast (actual macro)") pos(6) row(1) size(small))
+		graph export "$f_chk\npl_backtest.png", as(png) replace width(1600)
 	restore
 
 *2.	Industry results
@@ -448,13 +504,15 @@ save "$data\bank.dta", replace
 			gen car_`i'=cap_b`i'/rwa_b`i'*100
 			gen tr1_`i'=tier1_b`i'/rwa_b`i'*100
 			gen eat_`i'=eat_b`i'/asset_b`i'*100
+			gen roa_`i'=eat_b`i'/asset_b`i'*400
 		}
-		plot3 npl,  ytitle("Industry NPL (%)") file("$results\npl_scenario") opts(`leg' `gop')
-		plot3 prov, ytitle("Industry provisions (% of loans, quarterly)") file("$results\prov_scenario") opts(`leg' `gop')
-		plot3 sec,  ytitle("Losses from MTM securities to loans (%)") file("$results\securities") opts(`leg' `gop')
-		plot3 car,  ytitle("CAR (%)") file("$results\car_scenario") opts(`leg' `gop')
-		plot3 tr1,  ytitle("Tier 1 Capital (%)") file("$results\tr1_scenario") opts(`leg' `gop')
-		plot3 eat,  ytitle("Net income to assets (%, quarterly)") file("$results\eat_scenario") opts(`leg' `gop')
+		plot3 roa,  ytitle("Net income to assets (%, annualised)") file("$f_ind\industry_roa_ann") opts(`leg' `gop')
+		plot3 npl,  ytitle("Industry NPL (%)") file("$f_ind\npl_scenario") opts(`leg' `gop')
+		plot3 prov, ytitle("Industry provisions (% of loans, quarterly)") file("$f_ind\prov_scenario") opts(`leg' `gop')
+		plot3 sec,  ytitle("Losses from MTM securities to loans (%)") file("$f_ind\securities") opts(`leg' `gop')
+		plot3 car,  ytitle("CAR (%)") file("$f_ind\car_scenario") opts(`leg' `gop')
+		plot3 tr1,  ytitle("Tier 1 Capital (%)") file("$f_ind\tr1_scenario") opts(`leg' `gop')
+		plot3 eat,  ytitle("Net income to assets (%, quarterly)") file("$f_ind\eat_scenario") opts(`leg' `gop')
 
 		* loss composition per scenario (forecast quarters)
 		keep if quarter>`base'
@@ -463,10 +521,10 @@ save "$data\bank.dta", replace
 			graph bar prov_`x' sec_`x', stack over(qlab) bar(1, color(navy)) bar(2, color(maroon)) ///
 				legend(order(1 "Credit losses" 2 "Market losses") pos(6) row(1) size(medium)) ///
 				ytitle("Losses to total loans (%)") title("Scenario `x'") graphregion(color(white))
-			graph save "$results\comp_`x'.gph", replace
+			graph save "$gph\comp_`x'.gph", replace
 		}
-		graph combine "$results\comp_1.gph" "$results\comp_2.gph" "$results\comp_3.gph", iscale(0.5) row(1) ycommon graphregion(color(white))
-		graph export "$results\composition.png", as(png) replace width(1800)
+		graph combine "$gph\comp_1.gph" "$gph\comp_2.gph" "$gph\comp_3.gph", iscale(0.5) row(1) ycommon graphregion(color(white))
+		graph export "$f_ind\composition.png", as(png) replace width(1800)
 	restore
 
 *3.	KBMI results
@@ -480,16 +538,16 @@ save "$data\bank.dta", replace
 				gen tr1_`i'=tier1_b`i'/rwa_b`i'*100
 				gen eat_`i'=eat_b`i'/asset_b`i'*100
 			}
-			plot3 npl, ytitle("NPL (%)") title("KBMI `b'") file("$results\npl_scenario_kbmi`b'") save opts(`leg' `gop')
-			plot3 car, ytitle("CAR (%)") title("KBMI `b'") file("$results\car_scenario_kbmi`b'") save opts(`leg' `gop')
-			plot3 tr1, ytitle("Tier 1 Capital (%)") title("KBMI `b'") file("$results\tr1_scenario_kbmi`b'") save opts(`leg' `gop')
-			plot3 eat, ytitle("Net income (%)") title("KBMI `b'") file("$results\eat_scenario_kbmi`b'") save opts(`leg' `gop')
+			plot3 npl, ytitle("NPL (%)") title("KBMI `b'") file("$gph\npl_scenario_kbmi`b'") save opts(`leg' `gop')
+			plot3 car, ytitle("CAR (%)") title("KBMI `b'") file("$gph\car_scenario_kbmi`b'") save opts(`leg' `gop')
+			plot3 tr1, ytitle("Tier 1 Capital (%)") title("KBMI `b'") file("$gph\tr1_scenario_kbmi`b'") save opts(`leg' `gop')
+			plot3 eat, ytitle("Net income (%)") title("KBMI `b'") file("$gph\eat_scenario_kbmi`b'") save opts(`leg' `gop')
 		restore
 	}
 	foreach s in npl car tr1 eat{
-		graph combine "$results\\`s'_scenario_kbmi1.gph" "$results\\`s'_scenario_kbmi2.gph" ///
-			"$results\\`s'_scenario_kbmi3.gph" "$results\\`s'_scenario_kbmi4.gph", iscale(0.5) graphregion(color(white))
-		graph export "$results\\`s'_kbmi.png", as(png) replace width(1800)
+		graph combine "$gph\\`s'_scenario_kbmi1.gph" "$gph\\`s'_scenario_kbmi2.gph" ///
+			"$gph\\`s'_scenario_kbmi3.gph" "$gph\\`s'_scenario_kbmi4.gph", iscale(0.5) graphregion(color(white))
+		graph export "$f_kbmi\\`s'_kbmi.png", as(png) replace width(1800)
 	}
 
 *3b. Himbara vs non-Himbara results
@@ -504,16 +562,16 @@ save "$data\bank.dta", replace
 				gen tr1_`i'=tier1_b`i'/rwa_b`i'*100
 				gen eat_`i'=eat_b`i'/asset_b`i'*100
 			}
-			plot3 npl, ytitle("NPL (%)") title("`gl'") file("$results\npl_scenario_him`h'") save opts(`leg' `gop')
-			plot3 car, ytitle("CAR (%)") title("`gl'") file("$results\car_scenario_him`h'") save opts(`leg' `gop')
-			plot3 tr1, ytitle("Tier 1 Capital (%)") title("`gl'") file("$results\tr1_scenario_him`h'") save opts(`leg' `gop')
-			plot3 eat, ytitle("Net income (%)") title("`gl'") file("$results\eat_scenario_him`h'") save opts(`leg' `gop')
+			plot3 npl, ytitle("NPL (%)") title("`gl'") file("$gph\npl_scenario_him`h'") save opts(`leg' `gop')
+			plot3 car, ytitle("CAR (%)") title("`gl'") file("$gph\car_scenario_him`h'") save opts(`leg' `gop')
+			plot3 tr1, ytitle("Tier 1 Capital (%)") title("`gl'") file("$gph\tr1_scenario_him`h'") save opts(`leg' `gop')
+			plot3 eat, ytitle("Net income (%)") title("`gl'") file("$gph\eat_scenario_him`h'") save opts(`leg' `gop')
 		restore
 	}
 	foreach s in npl car tr1 eat{
-		graph combine "$results\\`s'_scenario_him1.gph" "$results\\`s'_scenario_him0.gph", ///
+		graph combine "$gph\\`s'_scenario_him1.gph" "$gph\\`s'_scenario_him0.gph", ///
 			row(1) ycommon iscale(0.7) graphregion(color(white))
-		graph export "$results\\`s'_himbara.png", as(png) replace width(1800)
+		graph export "$f_him\\`s'_himbara.png", as(png) replace width(1800)
 	}
 
 *4.	Failed banks
@@ -529,8 +587,46 @@ save "$data\bank.dta", replace
 			}
 			xtline car_b`i' if fail_b`i'==1 & year>=2024, overlay yline($car_min, lcolor(maroon) lpattern(dash)) ///
 				ytitle("CAR (%)") xline(`base', lcolor(gs10) lpattern(shortdash)) graphregion(color(white))
-			graph export "$results\fail_bank_scenario`i'.png", as(png) replace width(1600)
+			graph export "$f_bank\fail_bank_scenario`i'.png", as(png) replace width(1600)
 		}
+	restore
+
+*4b. Bank CAR: start vs minimum over the horizon in Adverse 2
+	preserve
+		bys bank_id: egen car0=max(cond(quarter==max, car_b1, .))
+		bys bank_id: egen carmin3=min(cond(quarter>max, car_b3, .))
+		bys bank_id: keep if _n==1
+		drop if missing(car0, carmin3)
+		twoway (scatter carmin3 car0 if carmin3>=$car_min, mcolor(navy%70) msize(small))          ///
+		       (scatter carmin3 car0 if carmin3<$car_min, mcolor(maroon) msize(medium)            ///
+		            mlabel(bank) mlabcolor(maroon) mlabsize(vsmall))                              ///
+		       (function y=x, range(0 100) lcolor(gs10) lpattern(dot)),                            ///
+		       yline($car_min, lcolor(maroon) lpattern(dash)) graphregion(color(white))           ///
+		       legend(order(1 "Pass" 2 "CAR < $car_min%") pos(6) row(1) size(small))               ///
+		       xtitle("CAR `=string(`base',"%tq")' (%)") ytitle("Minimum CAR, Adverse 2 (%)")
+		graph export "$f_bank\bank_car_adverse2.png", as(png) replace width(1600)
+	restore
+
+*5.	Macro scenarios as used by the model (history from 2023 + forecast horizon)
+	preserve
+		forval i=1/3{
+			use quarter gdp reporate d_property sbn10y using "$data\comb`i'.dta", clear
+			rename (gdp reporate d_property sbn10y) (gdp_`i' rep_`i' prop_`i' sbn_`i')
+			tempfile m`i'
+			save `m`i''
+		}
+		use `m1', clear
+		merge 1:1 quarter using `m2', nogen
+		merge 1:1 quarter using `m3', nogen
+		keep if quarter>=tq(2023q1) & quarter<=`base'+$horizon
+		format quarter %tq
+		plot3 gdp,  ytitle("%") title("Real GDP growth, YoY (%)") file("$gph\m_gdp") save opts(`leg' `gop')
+		plot3 rep,  ytitle("%") title("BI policy rate (%)") file("$gph\m_rep") save opts(`leg' `gop')
+		plot3 prop, ytitle("%") title("Residential property price index, QoQ (%)") file("$gph\m_prop") save opts(`leg' `gop')
+		plot3 sbn,  ytitle("%") title("SBN 10Y yield (%)") file("$gph\m_sbn") save opts(`leg' `gop')
+		graph combine "$gph\m_gdp.gph" "$gph\m_rep.gph" "$gph\m_prop.gph" "$gph\m_sbn.gph", ///
+			rows(2) iscale(0.6) graphregion(color(white))
+		graph export "$f_macro\macro_scenarios.png", as(png) replace width(1800)
 	restore
 
 *****************************
