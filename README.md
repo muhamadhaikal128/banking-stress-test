@@ -8,15 +8,15 @@ Version history (original handbook do-file → current model, with results per v
 
 ## Folder structure
 
-| Folder | Contents | Written by code? |
-|---|---|---|
-| `input/` | `Solvency ST.xlsx` (macro history, 3 scenarios, Parameters), `Stress Testing Manual - Excel Template.xlsx` (Bloomberg BQL bank data), `kbmi.dta` (bank classes); source files for the Parameters/scenario inputs: `Asset Market Updater - Stasis_011026.xlsx` (Bloomberg yields: SBN/UST 10Y) and `ownership/` (BI SRBI and DJPPR SBN ownership releases, used for `w_srbi`) | never |
-| `input/reference/` | Handbook PDF, W5 training deck, original `dofile.do` | never |
-| `intermediate/` | `bank_raw`, `bank_panel`, `macro`, `parameters`, satellite estimates (`est_*.ster`, `sat_coefs`, `bank_anchor`, `backtest`), `projection`, `industry_path` | yes |
-| `output/tables/` | `stress_test_results.xlsx` (Summary, Industry_path, KBMI_path, Bank, Failed_banks, Assumptions), `satellite_models.xlsx` | yes |
-| `output/figures/` | industry CAR / T1 / NPL / ROA, loss composition, CAR by KBMI, bank CAR scatter, NPL back-test, macro scenarios | yes |
-| `output/logs/` | full run log | yes |
-| `script/` | `00_master.do` → `01_import` → `02_prepare` → `03_satellite` → `04_projection` → `05_results` | — |
+| Folder               | Contents                                                                                                                                                                                                                                                                                                                                                                                 | Written by code? |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| `input/`           | `Solvency ST.xlsx` (macro history, 3 scenarios, Parameters), `Stress Testing Manual - Excel Template.xlsx` (Bloomberg BQL bank data), `kbmi.dta` (bank classes); source files for the Parameters/scenario inputs: `Asset Market Updater - Stasis_011026.xlsx` (Bloomberg yields: SBN/UST 10Y) and `ownership/` (BI SRBI and DJPPR SBN ownership releases, used for `w_srbi`) | never            |
+| `input/reference/` | Handbook PDF, W5 training deck, original`dofile.do`                                                                                                                                                                                                                                                                                                                                    | never            |
+| `intermediate/`    | `bank_raw`, `bank_panel`, `macro`, `parameters`, satellite estimates (`est_*.ster`, `sat_coefs`, `bank_anchor`, `backtest`), `projection`, `industry_path`                                                                                                                                                                                                           | yes              |
+| `output/tables/`   | `stress_test_results.xlsx` (Summary, Industry_path, KBMI_path, Bank, Failed_banks, Assumptions), `satellite_models.xlsx`                                                                                                                                                                                                                                                             | yes              |
+| `output/figures/`  | industry CAR / T1 / NPL / ROA, loss composition, CAR by KBMI, bank CAR scatter, NPL back-test, macro scenarios                                                                                                                                                                                                                                                                           | yes              |
+| `output/logs/`     | full run log                                                                                                                                                                                                                                                                                                                                                                             | yes              |
+| `script/`          | `00_master.do` → `01_import` → `02_prepare` → `03_satellite` → `04_projection` → `05_results`                                                                                                                                                                                                                                                                           | —               |
 
 `archive/Stata/` and `archive/Result/` are the original materials (old do-file outputs,
 backups, earlier charts), kept for reference; the pipeline does not use them.
@@ -25,7 +25,9 @@ backups, earlier charts), kept for reference; the pipeline does not use them.
 `Solvency ST.xlsx` in Excel first). Edit `global base` at the top if the folder moves. It is the corrected
 version of the earlier model (`archive/old_script/dofile_old.do`): same structure and model choices,
 bugs fixed (FIX LOG at the end of the file). It writes to `intermediate/fixed/` and `output/fixed/`
-(incl. `stress_test_summary.xlsx`).
+(incl. `stress_test_summary.xlsx`). Two judgmental settings drive the stress severity: `k_stress`
+(provision overlay, sheet `Parameters`) and `global e_prop` (property-price effect on NPL, borrowed from
+Prospera, top of the do-file; `0` = off). See `CHANGELOG.md`.
 
 **Alternative logit model (comparison only):** `do "script/00_master.do"` (edit `$root` if the folder
 moves); outputs in `intermediate/` and `output/tables`, `output/figures`. `script/stress_test_full.do`
@@ -55,17 +57,17 @@ the master file; economic parameters (tax, payout, SRBI share, k_stress) are rea
 
 ### Corrections relative to the original `dofile.do`
 
-| Issue | Original | Now |
-|---|---|---|
-| GDP growth per quarter | used year-on-year growth as quarterly growth (~5% per quarter) | (1+g)^¼ − 1 |
-| RWA growth | baseline GDP in every scenario | the scenario's own GDP |
-| Policy-rate pass-through | annual rate change added to quarterly yields | divided by 4 |
-| Provisions | % of loans in estimation, % of assets in the P&L | loans in both |
-| Securities loss | used the change of a change, applied to a ratio | % price change applied to an amount |
-| Dividends | none | 50% payout |
-| Macro merge | `merge m:m` | `m:1` |
-| Outlier exclusion | `bank_id==7` | by ticker |
-| Chart dates | hard-coded | derived from the data |
+| Issue                    | Original                                                       | Now                                 |
+| ------------------------ | -------------------------------------------------------------- | ----------------------------------- |
+| GDP growth per quarter   | used year-on-year growth as quarterly growth (~5% per quarter) | (1+g)^¼ − 1                       |
+| RWA growth               | baseline GDP in every scenario                                 | the scenario's own GDP              |
+| Policy-rate pass-through | annual rate change added to quarterly yields                   | divided by 4                        |
+| Provisions               | % of loans in estimation, % of assets in the P&L               | loans in both                       |
+| Securities loss          | used the change of a change, applied to a ratio                | % price change applied to an amount |
+| Dividends                | none                                                           | 50% payout                          |
+| Macro merge              | `merge m:m`                                                  | `m:1`                             |
+| Outlier exclusion        | `bank_id==7`                                                 | by ticker                           |
+| Chart dates              | hard-coded                                                     | derived from the data               |
 
 ## Key caveats
 

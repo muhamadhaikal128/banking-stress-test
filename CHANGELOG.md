@@ -93,6 +93,50 @@ rather than fixing a bug, and they made NPL implausibly low:
 | v3 with both changes (reverted) | 2.01 | 2.19 |
 | **v3 final** | **2.21** | **2.48** |
 
+### Model change in v3: property-price term in NPL (12 Oct 2026)
+
+Not a bug fix but a deliberate, **judgmental** addition (setting `global e_prop` at the top of
+`dofile_fixed.do`; `0` switches it off and gives the pure model).
+
+- **Why.** Without it, Adverse 2 NPL is only 0.27 pp above the baseline (Prospera: about 0.77 pp), and the
+  property shock in the scenarios has no channel into the model.
+- **Why not estimated.** The property price index (IHPR) never fell in sample (QoQ growth +0.04% to
+  +1.39%; scenario trough −2.65%). Estimated on our data to 2026Q2, the property coefficients have the
+  wrong sign: Adverse 2 NPL would *fall* to 1.61%. Real (CPI-deflated) prices give the same result.
+- **What.** `e_prop = −0.429`, the sum of the property lag coefficients in Prospera's NPL regression
+  (2014–2024Q2), spread evenly over lags 1–4. It enters as a **static** term on top of the dynamic NPL
+  core (NPL = core + property term), so NPL persistence does not multiply it. Imposing Prospera's four
+  separate lag coefficients was also tested; their alternating signs made baseline NPL jump by about
+  0.3 pp in 2026Q4, so the summed, evenly spread version was chosen.
+
+| End 2027Q2, k_stress = 0.05 | v3 before | **v3 with property term** |
+|---|---|---|
+| NPL Baseline / Adv 1 / Adv 2 (%) | 2.21 / 2.27 / 2.48 | **2.26 / 2.34 / 3.01** |
+| NPL spread Adv 2 − Baseline (pp) | 0.27 | **0.75** |
+| CAR end Baseline / Adv 1 / Adv 2 (%) | 22.47 / 21.93 / 21.29 | **22.47 / 21.91 / 21.11** |
+| Credit losses Adv 2 (% capital) | 11.7 | **13.2** |
+| Banks with CAR < 8%, Adv 2 | 2 (BINA, BCIC) | 2 (BINA, BCIC) |
+
+### Scenario change: Adverse 1 property path (12 Oct 2026)
+
+With the property term, Adverse 1 NPL rose only 0.08 pp above the baseline (Adverse 2: 0.75 pp),
+because the Adverse 1 property path was barely shocked within the horizon (+0.20, +0.36, 0.00, +0.11%
+QoQ; the declines came only in 2027Q3–Q4). In `input/Solvency ST.xlsx`, sheet `Scenario 2`, column
+`d_property` (F2:F7) is now the **midpoint between Baseline and Adverse 2**, consistent with Adverse 1
+GDP, which also lies about halfway. F2 was a formula (`=Macro!J50-Haircut!I7`); F2:F7 are now values.
+
+| d_property, QoQ % | 26Q3 | 26Q4 | 27Q1 | 27Q2 | 27Q3 | 27Q4 |
+|---|---|---|---|---|---|---|
+| Adverse 1, old | 0.20 | 0.36 | 0.00 | 0.11 | −0.22 | −0.55 |
+| **Adverse 1, new** | **0.18** | **−0.57** | **−1.20** | **−1.16** | **−0.44** | **−0.19** |
+
+| End 2027Q2 | Baseline | Adverse 1 old | **Adverse 1 new** | Adverse 2 |
+|---|---|---|---|---|
+| NPL (%) | 2.26 | 2.34 | **2.57** | 3.01 |
+| CAR (%) | 22.47 | 21.91 | **21.88** | 21.11 |
+| Credit losses (% capital) | 4.7 | 7.9 | **8.3** | 13.2 |
+| Banks with CAR < 8% | 0 | 0 | **0** | 2 |
+
 The rise of about 0.1 pp in the first forecast quarter, seen in all scenarios, is **intended**. Each
 bank converges (ρ ≈ 0.8) back toward its through-the-cycle NPL, and the 100 bp BI-rate hike in
 2026Q2 feeds in with a lag. It is not a bug.
@@ -104,13 +148,16 @@ bank converges (ρ ≈ 0.8) back toward its through-the-cycle NPL, and the 100 b
 Base quarter 2026Q2, horizon 4 quarters (end 2027Q2). Losses are cumulative over the horizon, as %
 of starting regulatory capital.
 
-| | v2 (archive) | **v3 (current)** | alt (logit) |
-|---|---|---|---|
-| CAR end, Baseline / Adv 1 / Adv 2 (%) | 22.77 / 22.23 / 21.25 | **22.47 / 21.93 / 21.29** | 23.14 / 22.85 / 22.47 |
-| NPL end, Baseline / Adv 1 / Adv 2 (%) | 2.23 / 2.29 / 2.49 | **2.21 / 2.27 / 2.48** | 2.07 / 2.07 / 2.16 |
-| Credit losses Adv 2 (% capital) | 11.5 | **11.7** | 10.4 |
-| Market losses Adv 2 (% capital) | 6.4 | **3.2** | 3.2 |
-| Banks with CAR < 8%, Baseline / Adv 1 / Adv 2 | 0 / 0 / 1 | **0 / 0 / 2 (BINA, BCIC)** | 0 / 1 / 3 |
+| | v2 (archive) | v3 (bug fixes only) | **v3 current** (+ property term, new Adv 1 property path) | alt (logit) |
+|---|---|---|---|---|
+| CAR end, Baseline / Adv 1 / Adv 2 (%) | 22.77 / 22.23 / 21.25 | 22.47 / 21.93 / 21.29 | **22.47 / 21.88 / 21.11** | 23.14 / 22.85 / 22.47 |
+| NPL end, Baseline / Adv 1 / Adv 2 (%) | 2.23 / 2.29 / 2.49 | 2.21 / 2.27 / 2.48 | **2.26 / 2.57 / 3.01** | 2.07 / 2.07 / 2.16 |
+| Credit losses Adv 2 (% capital) | 11.5 | 11.7 | **13.2** | 10.4 |
+| Market losses Adv 2 (% capital) | 6.4 | 3.2 | **3.2** | 3.2 |
+| Banks with CAR < 8%, Baseline / Adv 1 / Adv 2 | 0 / 0 / 1 | 0 / 0 / 2 (BINA, BCIC) | **0 / 0 / 2 (BINA, BCIC)** | 0 / 1 / 3 |
+
+The alt (logit) column was run on the old Adverse 1 property path. It uses the scenario sheets too,
+so re-run it if it is to be compared on the new path.
 
 v1 has no summary table. Its charts in `archive/Result/` (files `*_buku*`, dated 4 Oct) come from
 an earlier data vintage.
@@ -145,8 +192,11 @@ However, it projects lower NPL in stress, because it is anchored on recent level
 
 - **BINA and BCIC fail mainly on MTM losses.** Bloomberg reports their securities at 66–70% of
   assets; check this against their financial statements.
-- **The NPL response to the scenarios is small.** Adverse 2 is only about 0.27 pp above the
-  baseline, because the macro sensitivity is estimated on 2015–2026, which includes the OJK
-  restructuring period. Stress credit losses therefore depend mainly on `k_stress`.
+- **The estimated NPL response to the scenarios is small.** From GDP and the BI rate alone, Adverse 2
+  is only about 0.27 pp above the baseline, because the macro sensitivity is estimated on 2015–2026,
+  which includes the OJK restructuring period. The judgmental property term (`e_prop`) raises this to
+  0.75 pp. Stress credit losses still depend mainly on `k_stress`. Its data-based estimate is about 0.02
+  (industry provisions on GDP gap × NPL). 0.05 is kept as a judgmental severe calibration. The target
+  of 11.5% of capital should be re-checked: the peak in our data is 10.5% (2021Q1).
 - **The scenario sheets hold 6 quarters but the model uses 4.** The horizon is set by
   `global horizon` / `tsappend`.
