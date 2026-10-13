@@ -102,13 +102,23 @@ forval r=1/`=_N'{
 	isid bank quarter
 	drop dup
 
+	* FIX: one-quarter scale errors in customer deposits (value < 20% of the average of the two
+	*      neighbouring quarters, e.g. MCOR 2020Q4 = Rp0.02T vs ~Rp18T) are replaced by that average
+	sort bank quarter
+	by bank: gen double dep_nb=(bs_customer_deposits[_n-1]+bs_customer_deposits[_n+1])/2 if quarter[_n-1]==quarter-1 & quarter[_n+1]==quarter+1
+	gen byte dep_fix=bs_customer_deposits<0.2*dep_nb & !missing(dep_nb, bs_customer_deposits)
+	list bank quarter bs_customer_deposits dep_nb if dep_fix, noobs clean
+	replace bs_customer_deposits=dep_nb if dep_fix
+	drop dep_nb
+
 	* FIX: m:1 merge (one KBMI row per bank) and keep matched banks only
 	merge m:1 bank using "$source\kbmi.dta", keep(match) keepusing(kbmi) nogen
 
-	* temporary command, to exclude outlier
+	* BANK (Bank Aladin Syariah) excluded: loans recorded at Rp29-42 million in 2021 give provision/loan
+	* ratios of about -50,000%, which inflate the provision-response coefficients about 60-fold for ALL
+	* banks; its provisions are also negative in every quarter (sign convention). Assets ~0.1% of industry.
 	drop if bank == "BANK"
-	* MCOR: simulated interest expense ~9x interest income (saving_r data issue) -> spurious failure
-	drop if bank == "MCOR"
+	* MCOR is kept: its only data error (deposits 2020Q4) is repaired by the deposit fix above
 
 	encode bank, gen(bank_id)
 	xtset bank_id quarter
@@ -836,3 +846,6 @@ save "$data\bank.dta", replace
 * Model change (12 Oct 2026, not a fix):
 * 13. Judgmental property-price term in NPL ($e_prop = -0.429, Prospera's summed elasticity, evenly over
 *     lags 1-4), added as a static component on top of the dynamic NPL core. Set $e_prop 0 to switch off.
+* 14. Deposit scale errors repaired (value < 20% of neighbouring quarters' average -> that average;
+*     MCOR 2020Q4). MCOR is now included (46 banks); its earlier spurious failure came from this error.
+*     BANK stays excluded (see reason at the exclusion line).

@@ -1,6 +1,6 @@
 # Indonesian Banking Solvency Stress Test
 
-Top-down, bank-level solvency stress test of 45 listed Indonesian banks, following
+Top-down, bank-level solvency stress test of 46 listed Indonesian banks, following
 the Prospera *Banking Stress Test Handbook*. Base quarter **2026Q2**, horizon **4 quarters**,
 scenarios **Baseline / Adverse 1 / Adverse 2**.
 
@@ -65,6 +65,9 @@ from sheet `Parameters` of `Solvency ST.xlsx`.
 - The bank data come from the `Output Sheet (Copy)` snapshot. `Output Sheet` holds BQL formulas
   that only refresh on a Bloomberg Terminal.
 - Securities larger than total assets (Bloomberg unit errors) are replaced by the KBMI median.
+  One-quarter scale errors in deposits (e.g. MCOR 2020Q4) are replaced by the average of the
+  neighbouring quarters. BANK (Bank Aladin Syariah) is excluded, because its 2021 loans recorded at
+  Rp29–42 million distort the provision regression for all banks.
 - BINA and BCIC fail mainly through MTM losses, because their reported FV securities are 66–70% of assets
   (industry: about 9%). Verify these against their financial statements before drawing conclusions.
 - The NPL back-test (`6_model_checks/npl_backtest.png`) shows an **upward bias**. Estimated to
