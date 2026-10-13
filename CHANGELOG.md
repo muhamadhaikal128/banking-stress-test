@@ -194,14 +194,14 @@ of starting regulatory capital.
 
 | | v2 (archive) | v3 (bug fixes only) | **v3 current** (+ property term, scenario package) | alt (logit) |
 |---|---|---|---|---|
-| CAR end, Baseline / Adv 1 / Adv 2 (%) | 22.77 / 22.23 / 21.25 | 22.47 / 21.93 / 21.29 | **22.47 / 21.80 / 21.03** | 23.14 / 22.85 / 22.47 |
-| NPL end, Baseline / Adv 1 / Adv 2 (%) | 2.23 / 2.29 / 2.49 | 2.21 / 2.27 / 2.48 | **2.26 / 2.67 / 3.08** | 2.07 / 2.07 / 2.16 |
-| Credit losses Adv 2 (% capital) | 11.5 | 11.7 | **13.6** | 10.4 |
-| Market losses Adv 2 (% capital) | 6.4 | 3.2 | **3.4** | 3.2 |
+| CAR end, Baseline / Adv 1 / Adv 2 (%) | 22.77 / 22.23 / 21.25 | 22.47 / 21.93 / 21.29 | **22.47 / 21.80 / 21.03** | 23.14 / 22.78 / 22.41 |
+| NPL end, Baseline / Adv 1 / Adv 2 (%) | 2.23 / 2.29 / 2.49 | 2.21 / 2.27 / 2.48 | **2.26 / 2.67 / 3.08** | 2.07 / 2.12 / 2.20 |
+| Credit losses Adv 2 (% capital) | 11.5 | 11.7 | **13.6** | 10.5 |
+| Market losses Adv 2 (% capital) | 6.4 | 3.2 | **3.4** | 3.3 |
 | Banks with CAR < 8%, Baseline / Adv 1 / Adv 2 | 0 / 0 / 1 | 0 / 0 / 2 (BINA, BCIC) | **0 / 0 / 2 (BINA, BCIC)** | 0 / 1 / 3 |
 
-The alt (logit) column was run on the original scenarios. It reads the scenario sheets too, so re-run
-it if it is to be compared on the current scenarios.
+The v2 and "bug fixes only" columns use the original scenarios. v3 current and alt use the current
+scenarios (13 Oct 2026). The alt model has no property term, so its NPL barely responds.
 
 v1 has no summary table. Its charts in `archive/Result/` (files `*_buku*`, dated 4 Oct) come from
 an earlier data vintage.
