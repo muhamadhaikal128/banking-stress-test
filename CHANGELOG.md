@@ -137,6 +137,38 @@ GDP, which also lies about halfway. F2 was a formula (`=Macro!J50-Haircut!I7`); 
 | Credit losses (% capital) | 4.7 | 7.9 | **8.3** | 13.2 |
 | Banks with CAR < 8% | 0 | 0 | **0** | 2 |
 
+### Scenario package: coherent Adverse 1, stronger BI response in Adverse 2 (13 Oct 2026)
+
+This supersedes the Adverse 1 property path above. A review of the scenarios found that **Adverse 1 was
+not coherent**: the rupiah weakened by 7% and CPI rose to 5% (above the target band), yet BI *cut* rates
+by 71 bp. Adverse 1 is now a milder version of the Adverse 2 global shock. Changed in
+`input/Solvency ST.xlsx`, sheets `Scenario 2` and `Scenario 3`, rows 2–7, columns C (`reporate`),
+F (`d_property`), G (`d_price`) and J (`sbn10y`). All are now values; they were formulas linked to
+`Haircut`. GDP, CPI, FX and UST are unchanged.
+
+| 26Q3 → 27Q4 | Old | New |
+|---|---|---|
+| BI rate, Adverse 1 (%) | 5.75 → 4.56 (cuts) | 5.75, 6.00, 6.25, 6.25, 6.25, 6.25 (+50 bp) |
+| BI rate, Adverse 2 (%) | 5.75 → 6.94 | 6.00, 6.50, 7.00, 7.25, 7.25, 7.25 (+150 bp, in line with 2013/2018/2022) |
+| d_property, Adverse 2 (% QoQ) | 0.11, −1.39, −2.65, −2.57, −1.12, −0.62 | −0.5, −1.5, −2.0, −2.5, −2.5, −2.0 (no recovery while GDP still falls; 4Q total about −6.5%) |
+| d_property, Adverse 1 (% QoQ) | midpoint of the old Adverse 2 path | 50% of the new Adverse 2 deviation from baseline: −0.12, −0.62, −0.88, −1.12, −1.12, −0.88 |
+| SBN 10Y | — | shifted by beta_rate (0.125) × change in BI rate, as in `Haircut`; `d_price` = −5 × ΔSBN 10Y |
+
+Alternatives tested with Adverse 1 property at 67% and 75% of Adverse 2: CAR is practically the same
+(21.79 and 21.78), and only NPL changes (2.75 and 2.79). 50% was chosen.
+
+| End 2027Q2 | Before | **After** |
+|---|---|---|
+| NPL Baseline / Adv 1 / Adv 2 (%) | 2.26 / 2.57 / 3.01 | **2.26 / 2.67 / 3.08** |
+| CAR Baseline / Adv 1 / Adv 2 (%) | 22.47 / 21.88 / 21.11 | **22.47 / 21.80 / 21.03** |
+| Credit losses Adv 1 / Adv 2 (% capital) | 8.3 / 13.2 | **8.5 / 13.6** |
+| Market losses Adv 1 / Adv 2 (% capital) | 1.4 / 3.2 | **1.6 / 3.4** |
+| Banks with CAR < 8%, Adv 1 / Adv 2 | 0 / 2 | **0 / 2** (BINA's minimum CAR in Adverse 1 is 8.68%) |
+
+Remaining scenario points, not changed: baseline UST 10Y jumps from 4.47 to 4.96 in the first quarter;
+the Adverse 2 UST path (7.3% by 27Q2) is extreme and should be described as a tail scenario; the property
+shock is set by judgment (about 8σ of IHPR history, against about 2σ for the other variables).
+
 ### Output addition: Himbara vs non-Himbara and group tables (13 Oct 2026)
 
 - `global himbara "BBRI BMRI BBNI BBTN BRIS"` (top of `dofile_fixed.do`). These are the four Himbara
@@ -160,16 +192,16 @@ bank converges (ρ ≈ 0.8) back toward its through-the-cycle NPL, and the 100 b
 Base quarter 2026Q2, horizon 4 quarters (end 2027Q2). Losses are cumulative over the horizon, as %
 of starting regulatory capital.
 
-| | v2 (archive) | v3 (bug fixes only) | **v3 current** (+ property term, new Adv 1 property path) | alt (logit) |
+| | v2 (archive) | v3 (bug fixes only) | **v3 current** (+ property term, scenario package) | alt (logit) |
 |---|---|---|---|---|
-| CAR end, Baseline / Adv 1 / Adv 2 (%) | 22.77 / 22.23 / 21.25 | 22.47 / 21.93 / 21.29 | **22.47 / 21.88 / 21.11** | 23.14 / 22.85 / 22.47 |
-| NPL end, Baseline / Adv 1 / Adv 2 (%) | 2.23 / 2.29 / 2.49 | 2.21 / 2.27 / 2.48 | **2.26 / 2.57 / 3.01** | 2.07 / 2.07 / 2.16 |
-| Credit losses Adv 2 (% capital) | 11.5 | 11.7 | **13.2** | 10.4 |
-| Market losses Adv 2 (% capital) | 6.4 | 3.2 | **3.2** | 3.2 |
+| CAR end, Baseline / Adv 1 / Adv 2 (%) | 22.77 / 22.23 / 21.25 | 22.47 / 21.93 / 21.29 | **22.47 / 21.80 / 21.03** | 23.14 / 22.78 / 22.41 |
+| NPL end, Baseline / Adv 1 / Adv 2 (%) | 2.23 / 2.29 / 2.49 | 2.21 / 2.27 / 2.48 | **2.26 / 2.67 / 3.08** | 2.07 / 2.12 / 2.20 |
+| Credit losses Adv 2 (% capital) | 11.5 | 11.7 | **13.6** | 10.5 |
+| Market losses Adv 2 (% capital) | 6.4 | 3.2 | **3.4** | 3.3 |
 | Banks with CAR < 8%, Baseline / Adv 1 / Adv 2 | 0 / 0 / 1 | 0 / 0 / 2 (BINA, BCIC) | **0 / 0 / 2 (BINA, BCIC)** | 0 / 1 / 3 |
 
-The alt (logit) column was run on the old Adverse 1 property path. It uses the scenario sheets too,
-so re-run it if it is to be compared on the new path.
+The v2 and "bug fixes only" columns use the original scenarios. v3 current and alt use the current
+scenarios (13 Oct 2026). The alt model has no property term, so its NPL barely responds.
 
 v1 has no summary table. Its charts in `archive/Result/` (files `*_buku*`, dated 4 Oct) come from
 an earlier data vintage.
