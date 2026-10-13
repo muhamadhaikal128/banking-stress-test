@@ -27,7 +27,8 @@ version of the earlier model (`archive/old_script/dofile_old.do`): same structur
 bugs fixed (FIX LOG at the end of the file). It writes to `intermediate/fixed/` and `output/fixed/`
 (incl. `stress_test_summary.xlsx`). Two judgmental settings drive the stress severity: `k_stress`
 (provision overlay, sheet `Parameters`) and `global e_prop` (property-price effect on NPL, borrowed from
-Prospera, top of the do-file; `0` = off). See `CHANGELOG.md`.
+Prospera, top of the do-file; `0` = off). See `CHANGELOG.md`. Results are also split by KBMI and by
+Himbara vs non-Himbara (`global himbara`; sheets `Group_summary`, `Group_path`, charts `*_himbara.png`).
 
 **Alternative logit model (comparison only):** `do "script/00_master.do"` (edit `$root` if the folder
 moves); outputs in `intermediate/` and `output/tables`, `output/figures`. `script/stress_test_full.do`

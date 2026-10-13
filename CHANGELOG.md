@@ -137,6 +137,18 @@ GDP, which also lies about halfway. F2 was a formula (`=Macro!J50-Haircut!I7`); 
 | Credit losses (% capital) | 4.7 | 7.9 | **8.3** | 13.2 |
 | Banks with CAR < 8% | 0 | 0 | **0** | 2 |
 
+### Output addition: Himbara vs non-Himbara and group tables (13 Oct 2026)
+
+- `global himbara "BBRI BMRI BBNI BBTN BRIS"` (top of `dofile_fixed.do`). These are the four Himbara
+  banks plus BSI (BRIS), which was added by choice: it is majority state-owned through Mandiri, BRI and
+  BNI, but is not a formal Himbara member.
+- New charts `npl_himbara.png`, `car_himbara.png`, `tr1_himbara.png`, `eat_himbara.png`.
+- New sheets in `stress_test_summary.xlsx`: `Group_summary` (per group × scenario: CAR start/end/min,
+  Tier 1, NPL, cumulative credit/market losses and net income in % of the group's capital, banks with
+  CAR < 8%) and `Group_path` (quarterly CAR, Tier 1 and NPL). Both cover Himbara, Non-Himbara and
+  KBMI 1–4. The `Bank` sheet has a `himbara` column.
+- No change to the model or to the industry results.
+
 The rise of about 0.1 pp in the first forecast quarter, seen in all scenarios, is **intended**. Each
 bank converges (ρ ≈ 0.8) back toward its through-the-cycle NPL, and the 100 bp BI-rate hike in
 2026Q2 feeds in with a lag. It is not a bug.
