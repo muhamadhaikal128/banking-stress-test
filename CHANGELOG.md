@@ -169,6 +169,23 @@ Remaining scenario points, not changed: baseline UST 10Y jumps from 4.47 to 4.96
 the Adverse 2 UST path (7.3% by 27Q2) is extreme and should be described as a tail scenario; the property
 shock is set by judgment (about 8σ of IHPR history, against about 2σ for the other variables).
 
+### Bank sample: MCOR back in (data repaired), BANK stays out (13 Oct 2026)
+
+- **MCOR** was excluded because its simulated interest expense was about 9× its interest income. The
+  cause was a single Bloomberg error: deposits in 2020Q4 recorded at Rp0.02T (neighbouring quarters
+  about Rp18T), which made the funding cost 679% that quarter. A new fix replaces any one-quarter
+  deposit value below 20% of the average of its two neighbouring quarters with that average. It
+  catches MCOR 2020Q4 (and BANK 2021Q3). MCOR is now included. It is healthy: CAR 28.5%, with a minimum
+  of 22.8% in Adverse 2. The original Prospera model, run on the current data, still makes MCOR fail
+  (CAR −46%) because of this error.
+- **BANK** was tested and stays excluded. Its 2021 loans are recorded at Rp29–42 million, giving
+  provision/loan ratios of about −50,000%. Including it raises the provision-response coefficients
+  from 0.19/0.12 to 8.6/10.7 for all banks, and Adverse 2 CAR collapses to 3.1% with 24 failures. Its
+  provisions are also negative in every quarter.
+- **Results (46 banks):** CAR 22.48 / 21.82 / 21.05, NPL 2.25 / 2.66 / 3.06; banks with CAR < 8%
+  0 / 0 / 2 (BINA, BCIC). Before (45 banks): 22.47 / 21.80 / 21.03.
+- **First forecast quarter only (2026Q3):** no bank fails in any scenario; the lowest is MAYA at 10.7%.
+
 ### One official model; outputs grouped; alternative model archived (13 Oct 2026)
 
 - **v3 (`script/dofile_fixed.do`) is the only official model.** The alternative logit model gave
