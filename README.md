@@ -12,8 +12,8 @@ In Stata: `do "script/dofile_fixed.do"`. Run the whole file as a do-file (not li
 a selection), and close `Solvency ST.xlsx` in Excel first. Edit `global base` at the top if the folder moves.
 
 Settings at the top of the do-file: `horizon`, `car_min`, `himbara` (bank list), `e_prop` (property
-effect on NPL). Economic parameters (`tax_rate`, `payout`, `w_srbi`, `D_sbn`, `k_stress`) are read
-from sheet `Parameters` of `Solvency ST.xlsx`.
+effect on NPL). Economic parameters (`tax_rate`, `payout`, `w_srbi`, `D_sbn`, `k_stress`, `beta_l`,
+`beta_d`) are read from sheet `Parameters` of `Solvency ST.xlsx`.
 
 ## Folder structure
 
@@ -50,11 +50,15 @@ from sheet `Parameters` of `Solvency ST.xlsx`.
      because the property index never fell in sample.
 3. **Provisions.** Each bank's average credit cost over the last 8 quarters, plus the estimated
    response to NPL increases. On top of that sits the stress overlay
-   `k_stress × (baseline GDP − scenario GDP) × NPL`, with `k_stress = 0.05` (**judgment**; the
-   data-based estimate is about 0.02).
+   `k_stress × (baseline GDP − scenario GDP) × NPL`, with `k_stress = 0.03` (**calibrated** so that
+   Adverse 2 credit losses match the 2021Q1 provisioning peak, 10.5% of capital; the data-based
+   estimate is about 0.02).
 4. **Market risk.** The SBN share of FVTPL + FVOCI securities is revalued: price change = −D × ΔSBN 10Y.
    FVTPL losses go through P&L and FVOCI losses through OCI.
-5. **P&L.** Lending and funding rates move with the BI rate (change ÷ 4 per quarter). Non-interest
+5. **P&L.** Lending and funding rates move with the BI rate, partially: lending rate +`beta_l` ×
+   ΔBI/4 and funding cost +`beta_d` × ΔBI/4 per quarter, with `beta_l = 0.145` and `beta_d = 0.694`
+   (observed transmission in the 2018–19, 2022–24 and 2026 hiking episodes; `beta_d` applies the
+   time-deposit rate to all funding, an upper bound). Non-interest
    income and expense are held at their last-4-quarter ratios to assets. Tax is 22%. Dividends are a
    50% payout of profits; losses hit capital in full.
 6. **Capital.** The balance sheet and RWA grow with each scenario's nominal GDP. A bank **fails if
@@ -75,5 +79,5 @@ from sheet `Parameters` of `Solvency ST.xlsx`.
   about 2.1%: a mean absolute error of 0.30 pp over 8 quarters, 0.39 pp at most. Each bank reverts
   to its through-the-cycle NPL, which is above today's level. Part of the projected NPL rise
   (including about +0.15 pp in the baseline) is this reversion, not the scenario.
-- Stress severity depends materially on the two judgmental settings, `k_stress` and `e_prop`. Set
-  `e_prop` to 0 or change `k_stress` in `Parameters` to see the pure-model results.
+- Stress severity depends materially on the judgmental settings `k_stress` and `e_prop`, and on
+  `beta_d`. Set `e_prop` to 0 or change `k_stress` / `beta_d` in `Parameters` to see the effect.
