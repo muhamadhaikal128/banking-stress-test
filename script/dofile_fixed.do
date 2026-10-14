@@ -376,11 +376,13 @@ forval i=1/3{
 	*I/S calculations*
 	* FIX: lending/saving rates are quarterly, so add the policy-rate change divided by 4
 	*      (adding the annual change overstated the repricing effect four-fold)
+	* Pass-through (sheet Parameters): $beta_l of a BI rate change reaches loan rates, $beta_d reaches
+	* the funding cost (from observed transmission in the 2018-19, 2022-24 and 2026 hiking episodes)
 	gen lending_r_b`i'=lending_r
-	bys bank_id (quarter): replace lending_r_b`i'=lending_r_b`i'[_n-1] + d.reporate/4 if missing(lending_r_b`i') & quarter>max
+	bys bank_id (quarter): replace lending_r_b`i'=lending_r_b`i'[_n-1] + $beta_l*d.reporate/4 if missing(lending_r_b`i') & quarter>max
 
 	gen saving_r_b`i'=saving_r
-	bys bank_id (quarter): replace saving_r_b`i'=saving_r_b`i'[_n-1] + d.reporate/4 if missing(saving_r_b`i') & quarter>max
+	bys bank_id (quarter): replace saving_r_b`i'=saving_r_b`i'[_n-1] + $beta_d*d.reporate/4 if missing(saving_r_b`i') & quarter>max
 
 	gen int_inc_b`i'=lending_r_b`i'/100*loan_b`i'
 	gen int_exp_b`i'=saving_r_b`i'/100*dep_b`i'
@@ -803,21 +805,21 @@ save "$data\bank.dta", replace
 
 		* Assumptions used in this run
 		clear
-		set obs 10
+		set obs 12
 		gen str60 parameter=""
 		gen double value=.
 		local k=0
-		foreach p in payout k_stress npl_b0 npl_b1 w_srbi D_sbn e_prop{
+		foreach p in payout k_stress npl_b0 npl_b1 w_srbi D_sbn e_prop beta_l beta_d{
 			local ++k
 			replace parameter="`p'" in `k'
 			replace value=${`p'} in `k'
 		}
-		replace parameter="tax_rate" in 8
-		replace value=$tax_rate in 8
-		replace parameter="base quarter (last actual)" in 9
-		replace value=`base' in 9
-		replace parameter="forecast quarters" in 10
-		replace value=`last'-`base' in 10
+		replace parameter="tax_rate" in 10
+		replace value=$tax_rate in 10
+		replace parameter="base quarter (last actual)" in 11
+		replace value=`base' in 11
+		replace parameter="forecast quarters" in 12
+		replace value=`last'-`base' in 12
 		export excel using "$xls", sheet("Assumptions", replace) firstrow(variables)
 	restore
 	di "Excel summary written to $xls"
@@ -849,3 +851,6 @@ save "$data\bank.dta", replace
 * 14. Deposit scale errors repaired (value < 20% of neighbouring quarters' average -> that average;
 *     MCOR 2020Q4). MCOR is now included (46 banks); its earlier spurious failure came from this error.
 *     BANK stays excluded (see reason at the exclusion line).
+* 15. Rate pass-through: loan rates move by beta_l (0.145) and funding cost by beta_d (0.694) of each
+*     BI rate change (sheet Parameters; observed transmission in the 2018-19, 2022-24 and 2026 hikes).
+*     Was 1.0 for both. k_stress recalibrated 0.05 -> 0.03 (Adverse 2 credit loss ~ 2021Q1 peak, 10.5%).

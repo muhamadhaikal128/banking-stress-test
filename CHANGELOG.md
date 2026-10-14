@@ -217,6 +217,32 @@ The rise of about 0.1 pp in the first forecast quarter, seen in all scenarios, i
 bank converges (ρ ≈ 0.8) back toward its through-the-cycle NPL, and the 100 bp BI-rate hike in
 2026Q2 feeds in with a lag. It is not a bug.
 
+### Partial rate pass-through and overlay recalibration (14 Oct 2026)
+
+- **Pass-through (new parameters `beta_l`, `beta_d` in sheet `Parameters`).** Before, a BI-rate change
+  passed one-for-one to both lending and funding rates, so a hike was almost neutral for NII. Now
+  lending rate(t) = rate(t−1) + `beta_l` × ΔBI/4 and funding cost(t) = cost(t−1) + `beta_d` × ΔBI/4.
+  - Product betas are taken from observed transmission in the three hiking episodes 2018–19 (175 bp),
+    2022–24 (275 bp) and 2026 (100 bp): 1-month time deposits 0.694, savings 0.016, working-capital
+    loans 0.144, investment loans 0.194, consumer loans 0.091 (the 2018 −83 bp outlier excluded).
+  - `beta_l` = **0.145**: the product betas weighted by the loan mix (BI, May 2026: working capital
+    42.3%, investment 30.5%, consumer 27.2%).
+  - `beta_d` = **0.694**: the time-deposit beta applied to all funding. This is an upper bound on
+    funding pressure. With the LPS deposit mix (Dec 2025: time 35.7%, demand 32.8%, savings 30.6%) and
+    demand deposits at half the time-deposit beta, it would be about 0.37.
+  - Effect, Adverse 2 vs baseline rates over 4 quarters: interest income +0.86, interest expense −4.36,
+    net −3.50% of capital (Adverse 1: −1.56%).
+- **Overlay `k_stress` 0.05 → 0.03.** Calibrated so that Adverse 2 credit losses match the peak
+  4-quarter provisions in our data (2021Q1, 10.5% of capital). The data-based estimate is about 0.02;
+  COVID restructuring held provisioning down then, so 0.03 sits slightly above it. The overlay is now
+  46% of Adverse 2 credit losses (was 59%). Adverse 2 credit losses at k = 0 / 0.02 / 0.03 / 0.05:
+  5.6 / 8.7 / 10.3 / 13.5% of capital.
+- A BI-rate add-on to credit cost was tested in the scratchpad and **not** adopted.
+- **Results:** CAR 22.53 / 21.87 / 21.14, NPL 2.25 / 2.66 / 3.06; credit losses 4.7 / 7.1 / 10.3% of
+  capital; banks with CAR < 8%: 0 / 0 / 2 (BINA, BCIC, minimum CAR 4.3% and 4.5%). Before:
+  22.48 / 21.82 / 21.05. The two changes roughly offset: the smaller overlay lifts Adverse 2 CAR, the
+  margin squeeze lowers it.
+
 ---
 
 ## Results by version
@@ -224,16 +250,16 @@ bank converges (ρ ≈ 0.8) back toward its through-the-cycle NPL, and the 100 b
 Base quarter 2026Q2, horizon 4 quarters (end 2027Q2). Losses are cumulative over the horizon, as %
 of starting regulatory capital.
 
-| | v2 (archive) | v3 (bug fixes only) | **v3 current** (+ property term, scenario package) | alt (logit) |
-|---|---|---|---|---|
-| CAR end, Baseline / Adv 1 / Adv 2 (%) | 22.77 / 22.23 / 21.25 | 22.47 / 21.93 / 21.29 | **22.47 / 21.80 / 21.03** | 23.14 / 22.78 / 22.41 |
-| NPL end, Baseline / Adv 1 / Adv 2 (%) | 2.23 / 2.29 / 2.49 | 2.21 / 2.27 / 2.48 | **2.26 / 2.67 / 3.08** | 2.07 / 2.12 / 2.20 |
-| Credit losses Adv 2 (% capital) | 11.5 | 11.7 | **13.6** | 10.5 |
-| Market losses Adv 2 (% capital) | 6.4 | 3.2 | **3.4** | 3.3 |
-| Banks with CAR < 8%, Baseline / Adv 1 / Adv 2 | 0 / 0 / 1 | 0 / 0 / 2 (BINA, BCIC) | **0 / 0 / 2 (BINA, BCIC)** | 0 / 1 / 3 |
+| | v2 (archive) | v3 (bug fixes only) | v3, 13 Oct (+ property term, scenario package, 45 banks) | **v3 current** (+ MCOR, pass-through, k = 0.03; 46 banks) | alt (logit) |
+|---|---|---|---|---|---|
+| CAR end, Baseline / Adv 1 / Adv 2 (%) | 22.77 / 22.23 / 21.25 | 22.47 / 21.93 / 21.29 | 22.47 / 21.80 / 21.03 | **22.53 / 21.87 / 21.14** | 23.14 / 22.78 / 22.41 |
+| NPL end, Baseline / Adv 1 / Adv 2 (%) | 2.23 / 2.29 / 2.49 | 2.21 / 2.27 / 2.48 | 2.26 / 2.67 / 3.08 | **2.25 / 2.66 / 3.06** | 2.07 / 2.12 / 2.20 |
+| Credit losses Adv 2 (% capital) | 11.5 | 11.7 | 13.6 | **10.3** | 10.5 |
+| Market losses Adv 2 (% capital) | 6.4 | 3.2 | 3.4 | **3.4** | 3.3 |
+| Banks with CAR < 8%, Baseline / Adv 1 / Adv 2 | 0 / 0 / 1 | 0 / 0 / 2 (BINA, BCIC) | 0 / 0 / 2 (BINA, BCIC) | **0 / 0 / 2 (BINA, BCIC)** | 0 / 1 / 3 |
 
-The v2 and "bug fixes only" columns use the original scenarios. v3 current and alt use the current
-scenarios (13 Oct 2026). The alt model has no property term, so its NPL barely responds.
+The v2 and "bug fixes only" columns use the original scenarios. The later v3 columns and alt use the
+current scenarios (13 Oct 2026). The alt model has no property term, so its NPL barely responds.
 
 v1 has no summary table. Its charts in `archive/Result/` (files `*_buku*`, dated 4 Oct) come from
 an earlier data vintage.
@@ -271,8 +297,15 @@ However, it projects lower NPL in stress, because it is anchored on recent level
 - **The estimated NPL response to the scenarios is small.** From GDP and the BI rate alone, Adverse 2
   is only about 0.27 pp above the baseline, because the macro sensitivity is estimated on 2015–2026,
   which includes the OJK restructuring period. The judgmental property term (`e_prop`) raises this to
-  0.75 pp. Stress credit losses still depend mainly on `k_stress`. Its data-based estimate is about 0.02
-  (industry provisions on GDP gap × NPL). 0.05 is kept as a judgmental severe calibration. The target
-  of 11.5% of capital should be re-checked: the peak in our data is 10.5% (2021Q1).
+  0.75 pp. Stress credit losses still depend materially on `k_stress` (46% of Adverse 2 credit
+  losses). It is set at 0.03, calibrated to the 2021Q1 provisioning peak (10.5% of capital); the
+  data-based estimate is about 0.02.
+- **The stress overlay is triggered by the GDP gap only, not by the BI rate directly.** A scenario
+  with a sharp rate hike but no GDP shortfall would barely raise provisions. In the current scenarios
+  GDP and the BI rate move together, so the GDP gap stands in for both. The base credit cost (last
+  8-quarter average) is deliberately held flat; all stress enters through the NPL response and the
+  overlay.
+- **`beta_d` = 0.694 is an upper bound.** It treats all funding like time deposits. A deposit-mix
+  weighted value would be about 0.37, which would roughly halve the extra Adverse 2 interest expense.
 - **The scenario sheets hold 6 quarters but the model uses 4.** The horizon is set by
   `global horizon` / `tsappend`.
