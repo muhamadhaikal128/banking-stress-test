@@ -243,6 +243,38 @@ bank converges (ρ ≈ 0.8) back toward its through-the-cycle NPL, and the 100 b
   22.48 / 21.82 / 21.05. The two changes roughly offset: the smaller overlay lifts Adverse 2 CAR, the
   margin squeeze lowers it.
 
+### FVOCI import fixed; failure by risk-profile CAR minimum (14 Oct 2026)
+
+- **Bug: the model read the wrong FVOCI column.** `Output Sheet (Copy)` has two FVOCI columns:
+  - V: `AV_SA_FA_AT_FV_THRU_OT_COMP_INC(FA_PERIOD_TYPE=Q, …)`, the correct quarterly series.
+  - W: the same field without `FA_PERIOD_TYPE=Q`. It is not aligned with the bank/date rows. For
+    example, BNBA (assets Rp7.7T) shows FVOCI of Rp171T and BBCA only Rp0.4T.
+  
+  Stata truncates the column V header to exactly `av_sa_fa_at_fv_thru_ot_comp_inc`. The rename loop
+  treated that name as already taken and **dropped column V**, so column W was used for every bank.
+  The loop now keeps a column whose name is already the target.
+- **Checks:** column V passes the audit in `Sheet1`/`Sheet2` of the Excel template (FV + loans ≤
+  assets for every bank-quarter; highest 93.6%). It also matches published statements, e.g. BCIC
+  FVOCI Rp2.33T in Jun 2026 (Bank JTrust report) and BINA Rp7.4T in Sep 2025 (total securities
+  Rp7.7T).
+- **Data cleaning:**
+  - Negative FV values (106 in column V, Bloomberg artefacts) are set to 0.
+  - A missing FV value is filled from the previous quarter, at most 2 back (MCOR and BBMD in 2026Q2).
+  - The cap of securities at 100% of loans is removed.
+- **Failure by risk profile:** `Summary` also counts banks whose minimum CAR falls below the
+  risk-profile minimums of POJK 11/2016: 9, 10, 11 and 14%. Bank ratings are not in the data, so
+  only counts are shown.
+- **Results:**
+  - CAR 22.62 / 21.53 / 20.44 (was 22.53 / 21.87 / 21.14).
+  - Market losses −0.9 / 3.2 / 6.7% of capital (was −0.5 / 1.6 / 3.4). Large banks now carry
+    realistic FV books: Himbara market loss 6.9% of capital, KBMI 3 9.1%.
+  - Credit losses and NPL unchanged.
+  - Banks with CAR < 8%: 0 / 0 / 1 (**BINA**, minimum 6.5%; was BINA and BCIC). BINA holds FV
+    securities of about 4× capital, which fell to Rp2.8T after its 2025 loss. It still fails without
+    the overlay and the property term (7.9%).
+  - BCIC passes (11.6%).
+  - Below 9 / 10 / 11 / 14%, Adverse 2: 2 / 3 / 3 / 6 banks (BINA, MAYA, BBKP, BCIC, PNBS, BJBR).
+
 ---
 
 ## Results by version
@@ -250,13 +282,16 @@ bank converges (ρ ≈ 0.8) back toward its through-the-cycle NPL, and the 100 b
 Base quarter 2026Q2, horizon 4 quarters (end 2027Q2). Losses are cumulative over the horizon, as %
 of starting regulatory capital.
 
-| | v2 (archive) | v3 (bug fixes only) | v3, 13 Oct (+ property term, scenario package, 45 banks) | **v3 current** (+ MCOR, pass-through, k = 0.03; 46 banks) | alt (logit) |
-|---|---|---|---|---|---|
-| CAR end, Baseline / Adv 1 / Adv 2 (%) | 22.77 / 22.23 / 21.25 | 22.47 / 21.93 / 21.29 | 22.47 / 21.80 / 21.03 | **22.53 / 21.87 / 21.14** | 23.14 / 22.78 / 22.41 |
-| NPL end, Baseline / Adv 1 / Adv 2 (%) | 2.23 / 2.29 / 2.49 | 2.21 / 2.27 / 2.48 | 2.26 / 2.67 / 3.08 | **2.25 / 2.66 / 3.06** | 2.07 / 2.12 / 2.20 |
-| Credit losses Adv 2 (% capital) | 11.5 | 11.7 | 13.6 | **10.3** | 10.5 |
-| Market losses Adv 2 (% capital) | 6.4 | 3.2 | 3.4 | **3.4** | 3.3 |
-| Banks with CAR < 8%, Baseline / Adv 1 / Adv 2 | 0 / 0 / 1 | 0 / 0 / 2 (BINA, BCIC) | 0 / 0 / 2 (BINA, BCIC) | **0 / 0 / 2 (BINA, BCIC)** | 0 / 1 / 3 |
+| | v2 (archive) | v3 (bug fixes only) | v3, 13 Oct (+ property term, scenario package, 45 banks) | v3, 14 Oct (+ MCOR, pass-through, k = 0.03; 46 banks) | **v3 current** (+ correct FVOCI column) | alt (logit) |
+|---|---|---|---|---|---|---|
+| CAR end, Baseline / Adv 1 / Adv 2 (%) | 22.77 / 22.23 / 21.25 | 22.47 / 21.93 / 21.29 | 22.47 / 21.80 / 21.03 | 22.53 / 21.87 / 21.14 | **22.62 / 21.53 / 20.44** | 23.14 / 22.78 / 22.41 |
+| NPL end, Baseline / Adv 1 / Adv 2 (%) | 2.23 / 2.29 / 2.49 | 2.21 / 2.27 / 2.48 | 2.26 / 2.67 / 3.08 | 2.25 / 2.66 / 3.06 | **2.25 / 2.66 / 3.06** | 2.07 / 2.12 / 2.20 |
+| Credit losses Adv 2 (% capital) | 11.5 | 11.7 | 13.6 | 10.3 | **10.3** | 10.5 |
+| Market losses Adv 2 (% capital) | 6.4 | 3.2 | 3.4 | 3.4 | **6.7** | 3.3 |
+| Banks with CAR < 8%, Baseline / Adv 1 / Adv 2 | 0 / 0 / 1 | 0 / 0 / 2 (BINA, BCIC) | 0 / 0 / 2 (BINA, BCIC) | 0 / 0 / 2 (BINA, BCIC) | **0 / 0 / 1 (BINA)** | 0 / 1 / 3 |
+
+All v2 and v3 columns before "v3 current" used the misaligned FVOCI column (see the 14 Oct entry), so
+their market losses are not reliable.
 
 The v2 and "bug fixes only" columns use the original scenarios. The later v3 columns and alt use the
 current scenarios (13 Oct 2026). The alt model has no property term, so its NPL barely responds.
@@ -292,8 +327,9 @@ However, it projects lower NPL in stress, because it is anchored on recent level
 
 ## Open issues
 
-- **BINA and BCIC fail mainly on MTM losses.** Bloomberg reports their securities at 66–70% of
-  assets; check this against their financial statements.
+- **Bank risk-profile ratings are not in the data.** Failure is reported at 8% plus the counts below
+  9 / 10 / 11 / 14%. Which banks actually breach their own minimum depends on their ratings: check
+  them for the six banks below 14% in Adverse 2.
 - **The estimated NPL response to the scenarios is small.** From GDP and the BI rate alone, Adverse 2
   is only about 0.27 pp above the baseline, because the macro sensitivity is estimated on 2015–2026,
   which includes the OJK restructuring period. The judgmental property term (`e_prop`) raises this to

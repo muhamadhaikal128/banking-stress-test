@@ -86,6 +86,9 @@ forval r=1/`=_N'{
 			continue
 		}
 		local new=lower(substr(`"`lab'"', 1, `p'-1))
+		* FIX: Stata truncates the FVOCI header (column V, FA_PERIOD_TYPE=Q) to exactly its target name;
+		*      keep it. Before, it was dropped and the misaligned duplicate column W was used instead.
+		if "`v'"=="`new'" continue
 		capture confirm new variable `new'
 		if !_rc rename `v' `new'
 		else drop `v'
@@ -216,6 +219,15 @@ foreach j in lending_r saving_r{
 	drop c_`j'
 }
 
+* FIX: clean the FV securities fields: negative values (Bloomberg artefacts) -> 0; a missing value is
+*      filled from the previous quarter, at most 2 quarters back (e.g. MCOR and BBMD FVOCI in 2026Q2)
+foreach v in av_sa_fa_at_fv_thru_ot_comp_inc trading_secs_fa_at_fv_thru_pl {
+	replace `v'=0 if `v'<0
+	gen byte miss_fv=missing(`v')
+	bys bank_id (quarter): replace `v'=`v'[_n-1] if miss_fv & !miss_fv[_n-1] & quarter==quarter[_n-1]+1 & quarter<=max
+	bys bank_id (quarter): replace `v'=`v'[_n-1] if miss_fv & miss_fv[_n-1] & !miss_fv[_n-2] & quarter==quarter[_n-2]+2 & quarter<=max
+	drop miss_fv
+}
 * FIX: labels said "to assets" but the ratios are to loans
 gen afs_r=av_sa_fa_at_fv_thru_ot_comp_inc/bs_tot_loan*100
 la var afs_r "AFS (FVOCI) securities to loans"
@@ -231,7 +243,8 @@ replace sec_r=. if sec_flag
 bys kbmi quarter: egen sec_med=median(sec_r)
 replace sec_r=sec_med if sec_flag
 drop sec_med
-replace sec_r=100 if sec_r>100 & !missing(sec_r)
+* (the former cap of securities at 100% of loans is removed: with the correct FVOCI column no bank
+*  needs it, and it would understate a bank whose securities really exceed its loans)
 * no reported AFS/trading securities -> treat as zero (otherwise the bank drops out of the forecast)
 replace sec_r=0 if missing(sec_r) & quarter<=max
 la var sec_r "Tradeable securities to loans"
@@ -772,6 +785,12 @@ save "$data\bank.dta", replace
 		forval i=1/3{
 			qui count if car_min_s`i'<$car_min
 			local fail_`i'=r(N)
+			* minimum CAR by risk profile (POJK 11/2016): rating 1 = 8%, 2 = 9-<10%, 3 = 10-<11%,
+			* 4-5 = 11-14%. Bank ratings are not in the data, so count banks below each threshold
+			foreach c in 9 10 11 14 {
+				qui count if car_min_s`i'<`c'
+				local f`c'_`i'=r(N)
+			}
 		}
 		export excel using "$xls", sheet("Bank", replace) firstrow(variables)
 	restore
@@ -781,7 +800,7 @@ save "$data\bank.dta", replace
 		clear
 		set obs 3
 		gen str10 scenario=cond(_n==1,"Baseline",cond(_n==2,"Adverse 1","Adverse 2"))
-		foreach v in car_start car_end t1_start t1_end npl_start npl_end credit_loss_cap market_loss_cap net_income_cap credit_share banks_car_below8{
+		foreach v in car_start car_end t1_start t1_end npl_start npl_end credit_loss_cap market_loss_cap net_income_cap credit_share banks_car_below8 banks_car_below9 banks_car_below10 banks_car_below11 banks_car_below14{
 			gen double `v'=.
 		}
 		forval i=1/3{
@@ -796,6 +815,9 @@ save "$data\bank.dta", replace
 			replace net_income_cap=`ni_`i'' in `i'
 			replace credit_share=100*`cl_`i''/(`cl_`i''+max(`ml_`i'',0)) in `i'
 			replace banks_car_below8=`fail_`i'' in `i'
+			foreach c in 9 10 11 14 {
+				replace banks_car_below`c'=`f`c'_`i'' in `i'
+			}
 		}
 		gen str6 base_quarter=string(`base',"%tq")
 		gen str6 end_quarter=string(`last',"%tq")
@@ -854,3 +876,8 @@ save "$data\bank.dta", replace
 * 15. Rate pass-through: loan rates move by beta_l (0.145) and funding cost by beta_d (0.694) of each
 *     BI rate change (sheet Parameters; observed transmission in the 2018-19, 2022-24 and 2026 hikes).
 *     Was 1.0 for both. k_stress recalibrated 0.05 -> 0.03 (Adverse 2 credit loss ~ 2021Q1 peak, 10.5%).
+* 16. FVOCI import: the correct column V (FA_PERIOD_TYPE=Q) is kept. The rename loop used to drop it
+*     because Stata truncates its header to exactly the target name, and the misaligned duplicate
+*     column W was used for every bank. Negative FV values -> 0; missing FV values filled from the
+*     previous quarter (max 2). Cap of securities at 100% of loans removed. Summary also counts banks
+*     below the risk-profile CAR minimums (POJK 11/2016: 9 / 10 / 11 / 14%).

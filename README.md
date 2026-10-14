@@ -30,7 +30,7 @@ effect on NPL). Economic parameters (`tax_rate`, `payout`, `w_srbi`, `D_sbn`, `k
 
 | Item | Contents |
 |---|---|
-| `stress_test_summary.xlsx` | `Summary` (per scenario), `Industry_path`, `Group_summary` and `Group_path` (Himbara, Non-Himbara, KBMI 1–4), `Bank`, `Assumptions` |
+| `stress_test_summary.xlsx` | `Summary` (per scenario, incl. banks below the risk-profile CAR minimums 8 / 9 / 10 / 11 / 14%), `Industry_path`, `Group_summary` and `Group_path` (Himbara, Non-Himbara, KBMI 1–4), `Bank`, `Assumptions` |
 | `1_macro/` | `macro_scenarios.png`: GDP, BI rate, property prices, SBN 10Y, as used by the model |
 | `2_industry/` | CAR, Tier 1, NPL, net income (quarterly and annualised ROA), provisions, MTM losses, loss composition |
 | `3_kbmi/` | CAR, NPL, Tier 1, net income by KBMI group |
@@ -69,7 +69,9 @@ effect on NPL). Economic parameters (`tax_rate`, `payout`, `w_srbi`, `D_sbn`, `k
    income and expense are held at their last-4-quarter ratios to assets. Tax is 22%. Dividends are a
    50% payout of profits; losses hit capital in full.
 6. **Capital.** The balance sheet and RWA grow with each scenario's nominal GDP. A bank **fails if
-   CAR < 8% in any forecast quarter**.
+   CAR < 8% in any forecast quarter**. Because the minimum CAR depends on the bank's risk profile
+   (POJK 11/2016: rating 1 = 8%, 2 = 9–<10%, 3 = 10–<11%, 4–5 = 11–14%), the results also count banks
+   below 9, 10, 11 and 14%.
 
 ## Current results
 
@@ -77,13 +79,17 @@ End 2027Q2, 46 banks. Losses and net income are cumulative over 4 quarters, as %
 
 | | Baseline | Adverse 1 | Adverse 2 |
 |---|---|---|---|
-| CAR (%; start 22.53) | 22.53 | 21.87 | 21.14 |
-| Tier 1 (%) | 21.42 | 20.76 | 20.03 |
+| CAR (%; start 22.53) | 22.62 | 21.53 | 20.44 |
+| Tier 1 (%) | 21.52 | 20.42 | 19.33 |
 | NPL (%; start 2.10) | 2.25 | 2.66 | 3.06 |
 | Credit losses | 4.7 | 7.1 | 10.3 |
-| Market (MTM) losses | −0.5 | 1.6 | 3.4 |
-| Net income | 16.1 | 12.2 | 7.2 |
-| Banks with CAR < 8% | 0 | 0 | 2 (BINA, BCIC) |
+| Market (MTM) losses | −0.9 | 3.2 | 6.7 |
+| Net income | 16.1 | 12.2 | 7.3 |
+| Banks with CAR < 8% | 0 | 0 | 1 (BINA) |
+| Banks below 9 / 10 / 11 / 14% | 0 / 0 / 1 / 3 | 0 / 2 / 2 / 5 | 2 / 3 / 3 / 6 |
+
+Below 14% in Adverse 2: BINA 6.5, MAYA 8.6, BBKP 9.7, BCIC 11.6, PNBS 12.3, BJBR 13.8. BINA holds FV
+securities of about 4× capital and still fails without the overlay and the property term.
 
 In Adverse 2 the margin squeeze from partial pass-through lowers net interest income by 3.5% of
 capital. Sensitivity of Adverse 2 credit losses to `k_stress`: 0 → 5.6, 0.02 → 8.7, 0.03 → 10.3,
@@ -94,12 +100,15 @@ capital. Sensitivity of Adverse 2 credit losses to `k_stress`: 0 → 5.6, 0.02 �
 
 - The bank data come from the `Output Sheet (Copy)` snapshot. `Output Sheet` holds BQL formulas
   that only refresh on a Bloomberg Terminal.
-- Securities larger than total assets (Bloomberg unit errors) are replaced by the KBMI median.
-  One-quarter scale errors in deposits (e.g. MCOR 2020Q4) are replaced by the average of the
+- FVOCI comes from the quarterly column (`FA_PERIOD_TYPE=Q`, column V). The second FVOCI column in
+  the sheet is misaligned and is dropped. Negative FV values are set to 0, and a missing FV value is
+  filled from the previous quarter (at most 2). Securities larger than total assets would be replaced
+  by the KBMI median; with the correct column no bank triggers this.
+- One-quarter scale errors in deposits (e.g. MCOR 2020Q4) are replaced by the average of the
   neighbouring quarters. BANK (Bank Aladin Syariah) is excluded, because its 2021 loans recorded at
   Rp29–42 million distort the provision regression for all banks.
-- BINA and BCIC fail mainly through MTM losses, because their reported FV securities are 66–70% of assets
-  (industry: about 9%). Verify these against their financial statements before drawing conclusions.
+- Bank risk-profile ratings are not in the data, so it is not known which banks below 9–14% actually
+  breach their own minimum.
 - The NPL back-test (`6_model_checks/npl_backtest.png`) shows an **upward bias**. Estimated to
   2024Q2 and fed the actual macro, the model put NPL at about 2.45% by 2026Q2, against an actual of
   about 2.1%: a mean absolute error of 0.29 pp over 8 quarters, 0.40 pp at most. Each bank reverts
