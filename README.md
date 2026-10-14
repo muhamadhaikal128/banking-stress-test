@@ -48,11 +48,18 @@ effect on NPL). Economic parameters (`tax_rate`, `payout`, `w_srbi`, `D_sbn`, `k
    - The property term is `e_prop/4 × (sum of property-price growth, lags 1–4)`, with
      `e_prop = −0.429` borrowed from Prospera. This is a **judgment**: our own data cannot identify it,
      because the property index never fell in sample.
-3. **Provisions.** Each bank's average credit cost over the last 8 quarters, plus the estimated
-   response to NPL increases. On top of that sits the stress overlay
-   `k_stress × (baseline GDP − scenario GDP) × NPL`, with `k_stress = 0.03` (**calibrated** so that
-   Adverse 2 credit losses match the 2021Q1 provisioning peak, 10.5% of capital; the data-based
-   estimate is about 0.02).
+3. **Provisions** (% of loans per quarter) = max(base + response, 0) + overlay.
+   - **Base:** each bank's average credit cost over the last 8 quarters. It is the anchor and is held
+     flat over the horizon in every scenario.
+   - **Response:** `npl_b0 × ΔNPL⁺(t) + npl_b1 × ΔNPL⁺(t−1)`, with 0.19 and 0.12 estimated by panel FE
+     (total 0.31, p = 0.04). Only NPL increases count.
+   - **Stress overlay:** `k_stress × max(baseline GDP − scenario GDP, 0) × NPL`. It adds provisions
+     when the economy is below baseline, before NPL has risen, in the spirit of forward-looking ECL
+     (PSAK 71). It is zero in the baseline. `k_stress = 0.03` is **calibrated** so that Adverse 2
+     credit losses match the peak 4-quarter provisions in our data (2021Q1, 10.5% of capital). The
+     data-based estimate is about 0.02. The overlay is 46% of Adverse 2 credit losses.
+   - All stress enters through the response and the overlay. Raising the base as well would count the
+     same shock twice, because `k_stress` is calibrated on total credit losses.
 4. **Market risk.** The SBN share of FVTPL + FVOCI securities is revalued: price change = −D × ΔSBN 10Y.
    FVTPL losses go through P&L and FVOCI losses through OCI.
 5. **P&L.** Lending and funding rates move with the BI rate, partially: lending rate +`beta_l` ×
@@ -63,6 +70,25 @@ effect on NPL). Economic parameters (`tax_rate`, `payout`, `w_srbi`, `D_sbn`, `k
    50% payout of profits; losses hit capital in full.
 6. **Capital.** The balance sheet and RWA grow with each scenario's nominal GDP. A bank **fails if
    CAR < 8% in any forecast quarter**.
+
+## Current results
+
+End 2027Q2, 46 banks. Losses and net income are cumulative over 4 quarters, as % of starting capital.
+
+| | Baseline | Adverse 1 | Adverse 2 |
+|---|---|---|---|
+| CAR (%; start 22.53) | 22.53 | 21.87 | 21.14 |
+| Tier 1 (%) | 21.42 | 20.76 | 20.03 |
+| NPL (%; start 2.10) | 2.25 | 2.66 | 3.06 |
+| Credit losses | 4.7 | 7.1 | 10.3 |
+| Market (MTM) losses | −0.5 | 1.6 | 3.4 |
+| Net income | 16.1 | 12.2 | 7.2 |
+| Banks with CAR < 8% | 0 | 0 | 2 (BINA, BCIC) |
+
+In Adverse 2 the margin squeeze from partial pass-through lowers net interest income by 3.5% of
+capital. Sensitivity of Adverse 2 credit losses to `k_stress`: 0 → 5.6, 0.02 → 8.7, 0.03 → 10.3,
+0.05 → 13.5 (% of capital). By group and by bank: `stress_test_summary.xlsx`, sheets
+`Group_summary` and `Bank`.
 
 ## Key caveats
 
@@ -76,8 +102,13 @@ effect on NPL). Economic parameters (`tax_rate`, `payout`, `w_srbi`, `D_sbn`, `k
   (industry: about 9%). Verify these against their financial statements before drawing conclusions.
 - The NPL back-test (`6_model_checks/npl_backtest.png`) shows an **upward bias**. Estimated to
   2024Q2 and fed the actual macro, the model put NPL at about 2.45% by 2026Q2, against an actual of
-  about 2.1%: a mean absolute error of 0.30 pp over 8 quarters, 0.39 pp at most. Each bank reverts
+  about 2.1%: a mean absolute error of 0.29 pp over 8 quarters, 0.40 pp at most. Each bank reverts
   to its through-the-cycle NPL, which is above today's level. Part of the projected NPL rise
   (including about +0.15 pp in the baseline) is this reversion, not the scenario.
+- The stress overlay is triggered by the GDP gap only, not by the BI rate directly. A scenario with a
+  sharp rate hike but no GDP shortfall would barely raise provisions. In the current scenarios GDP
+  and the BI rate move together.
+- `beta_d = 0.694` is an upper bound: it treats all funding like time deposits. Weighting by the
+  deposit mix (LPS, Dec 2025) would give about 0.37.
 - Stress severity depends materially on the judgmental settings `k_stress` and `e_prop`, and on
   `beta_d`. Set `e_prop` to 0 or change `k_stress` / `beta_d` in `Parameters` to see the effect.
