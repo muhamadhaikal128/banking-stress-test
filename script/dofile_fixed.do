@@ -1,3 +1,6 @@
+**# 0. SETTINGS (paths, horizon, CAR minimum, Himbara list, e_prop)
+* Reviewer guide: lines starting with **# / **## are Do-file Editor bookmarks (Stata 17+);
+* open the bookmark list in the editor to jump between blocks. Comments only.
 *****************************
 ****** Global Settings ******
 *****************************
@@ -43,6 +46,7 @@ foreach d in f_macro f_ind f_kbmi f_him f_bank f_chk gph {
 }
 
 
+**## 0.1 Parameters sheet: payout, k_stress, w_srbi, D_sbn, beta_l, beta_d
 * Adjustable assumptions: Solvency ST.xlsx, sheet Parameters (column parameter = global name, value)
 cap import excel "$source\Solvency ST.xlsx", sheet("Parameters") firstrow case(lower) clear
 if _rc {
@@ -54,15 +58,18 @@ forval r=1/`=_N'{
 	di "`=parameter[`r']' = ${`=parameter[`r']'}"
 }
 
+**# 1. DATA IMPORT
 *****************************
 **** Raw Data Extraction ****
 *****************************
 
+**## 1.1 Macro history (sheet Macro)
 *1.	Macroeconomic data
 	import excel "$source\Solvency ST.xlsx", sheet("Macro") firstrow case(lower) clear
 	format quarter %tq
 	save "$data\macro.dta", replace
 
+**## 1.2 Macro scenarios (sheets Scenario 1-3)
 *2.	Macroeconomic scenario
 	forval i=1/3{
 		import excel "$source\Solvency ST.xlsx", sheet("Scenario `i'") case(lower) firstrow clear
@@ -73,6 +80,7 @@ forval r=1/`=_N'{
 		save "$data\comb`i'.dta", replace
 	}
 
+**## 1.3 Bank data (Bloomberg BQL) incl. FVOCI column fix (FIX 16)
 *3.	Bank-level data
 	import excel "$bql\Stress Testing Manual - Excel Template.xlsx", sheet("Output Sheet (Copy)") firstrow case(lower) clear
 	* FIX: name variables from the BQL item label (text before "("). "rename *fill* *" left names
@@ -105,6 +113,7 @@ forval r=1/`=_N'{
 	isid bank quarter
 	drop dup
 
+**## 1.4 Deposit scale repair (MCOR 2020Q4)
 	* FIX: one-quarter scale errors in customer deposits (value < 20% of the average of the two
 	*      neighbouring quarters, e.g. MCOR 2020Q4 = Rp0.02T vs ~Rp18T) are replaced by that average
 	sort bank quarter
@@ -114,6 +123,7 @@ forval r=1/`=_N'{
 	replace bs_customer_deposits=dep_nb if dep_fix
 	drop dep_nb
 
+**## 1.5 KBMI merge and BANK exclusion
 	* FIX: m:1 merge (one KBMI row per bank) and keep matched banks only
 	merge m:1 bank using "$source\kbmi.dta", keep(match) keepusing(kbmi) nogen
 
@@ -143,6 +153,7 @@ forval r=1/`=_N'{
 	save "$data\bank.dta", replace
 
 
+**# 2. PANEL SETUP (forecast quarters, Himbara flag, NPL ratio)
 *****************************
 ****** NPL Forecasting ******
 *****************************
@@ -175,6 +186,7 @@ label variable npl_r "NPL ratio"
 gen byte nbrk=(npl_r==0 | (abs(d.npl_r)>=5 & !missing(d.npl_r))) if quarter<=max
 la var nbrk "NPL reporting break (excluded from estimation)"
 
+**# 3. STARTING RATIOS (Langkah 0)
 *****************************
 ***** Ratio assumptions *****
 *****************************
@@ -182,6 +194,7 @@ la var nbrk "NPL reporting break (excluded from estimation)"
 gen prov_r=is_prov_for_loan_loss/bs_tot_loan*100
 la var prov_r "Provision to loans"
 
+**## 3.1 Provision response regression (npl_b0, npl_b1)
 * Provision response to NPL increases (bank FE, all years pooled; extreme NPL jumps > 5pp excluded)
 gen dnpl_pos=max(d.npl_r,0) if !missing(d.npl_r) & abs(d.npl_r)<5 & quarter<=max
 qui xtreg prov_r dnpl_pos l.dnpl_pos, fe vce(cluster bank_id)
@@ -190,6 +203,7 @@ global npl_b1=_b[l.dnpl_pos]
 di "Provision response to +1pp NPL: t = " %5.3f $npl_b0 ", t+1 = " %5.3f $npl_b1 ", total = " %5.3f $npl_b0+$npl_b1
 drop dnpl_pos
 
+**## 3.2 Balance-sheet shares, interest rates, non-interest ratios
 * FIX: starting ratios from the LAST ACTUAL quarter (stocks) or the LAST 4 QUARTERS (flows),
 *      not the bank's 2014-2026 average, which made loans, deposits and income jump at the
 *      start of the forecast
@@ -219,6 +233,7 @@ foreach j in lending_r saving_r{
 	drop c_`j'
 }
 
+**## 3.3 Securities: FV cleaning, ratio to loans, FVTPL share
 * FIX: clean the FV securities fields: negative values (Bloomberg artefacts) -> 0; a missing value is
 *      filled from the previous quarter, at most 2 quarters back (e.g. MCOR and BBMD FVOCI in 2026Q2)
 foreach v in av_sa_fa_at_fv_thru_ot_comp_inc trading_secs_fa_at_fv_thru_pl {
@@ -270,6 +285,7 @@ la var tax_rate "Tax rate"
 *              Baseline gets no add-on (gap = 0).
 save "$data\bank.dta", replace
 
+**# 4. SIMULATION, LOOP OVER SCENARIOS (Langkah 1-10)
 *****************************
 ******** Simulations ********
 *****************************
@@ -281,6 +297,7 @@ xtset bank_id quarter
 forval i=1/3{
 
 	*Obtaining scenario*
+**## 4.1 Scenario merge and bond-price change (SBN yield, w_srbi, duration)
 	* FIX: m:1 merge (comb has one row per quarter); was m:m ... force
 	merge m:1 quarter using "$data\comb`i'.dta", keep(match) ///
 		keepusing(gdp reporate cpi forex property d_property ln_forex d_price ust10y sbn10y) nogen
@@ -293,6 +310,7 @@ forval i=1/3{
 	* overrides the sheet's d_price
 	replace d_price_b`i'=-(1-$w_srbi)*$D_sbn*d.sbn10y_b`i'
 
+**## 4.2 Balance sheet and RWA (Langkah 2)
 	*B/S calculations*
 	* balance sheet grows with nominal GDP (real yoy growth + CPI inflation)
 	* FIX: exact quarterly rate (1+g)^(1/4)-1 instead of g/4
@@ -325,6 +343,7 @@ forval i=1/3{
 	gen nii_b`i'=cond(quarter<=max, non_int_inc, nii_r/100*asset_b`i')
 	gen nie_b`i'=cond(quarter<=max, non_int_exp, nie_r/100*asset_b`i')
 
+**## 4.3 NPL: dynamic FE core + property term (Langkah 3)
 	*NPL modelling and forecasting*
 	* dynamic FE model: lagged NPL + GDP + BI rate. Property is not estimated: IHPR never fell in-sample
 	* (min d_property +0.04), so its coefficient has the wrong sign and adverse shocks lowered NPL.
@@ -360,6 +379,7 @@ forval i=1/3{
 
 	label variable npl_b`i' "NPL ratio scenario `i'"
 
+**## 4.4 Provisions: base + NPL response + stress overlay k_stress (Langkah 4)
 	*Provision forecasting*
 	* provision/loans = bank's normal credit cost (avg of last 8 quarters)
 	*                 + estimated response to NPL increases this quarter and last quarter ($npl_b0, $npl_b1)
@@ -374,6 +394,7 @@ forval i=1/3{
 	label variable prov_b`i' "Bank provisions scenario `i'"
 	drop prov_base`i' prov_med`i'
 
+**## 4.5 Securities MTM: FVTPL to P&L, FVOCI to OCI (Langkah 5)
 	*Losses from tradeable securities*
 	* d_price = % price change of securities = -duration x change in SBN 10Y yield
 	* sec_b is securities to loans (%), so convert to an amount before applying the price change
@@ -386,6 +407,7 @@ forval i=1/3{
 	gen loss_r_b`i'=loss_b`i'/loan_b`i'*100
 	label variable loss_r_b`i' "Securities losses to loans scenario `i'"
 
+**## 4.6 Income statement: pass-through, tax, dividend (Langkah 6-8)
 	*I/S calculations*
 	* FIX: lending/saving rates are quarterly, so add the policy-rate change divided by 4
 	*      (adding the annual change overstated the repricing effect four-fold)
@@ -409,6 +431,7 @@ forval i=1/3{
 	* FIX: history shows reported net income, not the model's back-cast
 	replace eat_b`i'=net_income if quarter<=max
 
+**## 4.7 Capital, Tier 1, CAR (Langkah 9-10)
 	*CAR calculations*
 	gen tier1_b`i'=bs_tier1_capital
 	gen ret_b`i'=cond(eat_b`i'>0, (1-$payout)*eat_b`i', eat_b`i') if !missing(eat_b`i')
@@ -429,6 +452,7 @@ forval i=1/3{
 
 save "$data\bank.dta", replace
 
+**# 5. CHARTS (output/fixed)
 *****************************
 ********** Results **********
 *****************************
@@ -459,6 +483,7 @@ save "$data\bank.dta", replace
 		gen provamt_b`i'=prov_b`i'/100*loan_b`i'
 	}
 
+**## 5.1 NPL model checks: in-sample fit and back-test
 *1.	NPL model fit (in-sample, loan-weighted)
 	preserve
 		keep if quarter<=`base' & year>2014
@@ -518,6 +543,7 @@ save "$data\bank.dta", replace
 		graph export "$f_chk\npl_backtest.png", as(png) replace width(1600)
 	restore
 
+**## 5.2 Industry charts
 *2.	Industry results
 	preserve
 		keep if year>=2022
@@ -552,6 +578,7 @@ save "$data\bank.dta", replace
 		graph export "$f_ind\composition.png", as(png) replace width(1800)
 	restore
 
+**## 5.3 KBMI charts
 *3.	KBMI results
 	forval b=1/4{
 		preserve
@@ -575,6 +602,7 @@ save "$data\bank.dta", replace
 		graph export "$f_kbmi\\`s'_kbmi.png", as(png) replace width(1800)
 	}
 
+**## 5.4 Himbara vs non-Himbara charts
 *3b. Himbara vs non-Himbara results
 	forval h=1(-1)0{
 		local gl=cond(`h'==1,"Himbara","Non-Himbara")
@@ -599,6 +627,7 @@ save "$data\bank.dta", replace
 		graph export "$f_him\\`s'_himbara.png", as(png) replace width(1800)
 	}
 
+**## 5.5 Failed banks and bank CAR scatter
 *4.	Failed banks
 	preserve
 		forval i=1/3{
@@ -632,6 +661,7 @@ save "$data\bank.dta", replace
 		graph export "$f_bank\bank_car_adverse2.png", as(png) replace width(1600)
 	restore
 
+**## 5.6 Macro scenario chart
 *5.	Macro scenarios as used by the model (history from 2023 + forecast horizon)
 	preserve
 		forval i=1/3{
@@ -654,6 +684,7 @@ save "$data\bank.dta", replace
 		graph export "$f_macro\macro_scenarios.png", as(png) replace width(1800)
 	restore
 
+**# 6. EXCEL SUMMARY (stress_test_summary.xlsx)
 *****************************
 ********** Excel summary ****
 *****************************
@@ -678,6 +709,7 @@ save "$data\bank.dta", replace
 		gen nplamt_b`i'=npl_b`i'/100*loan_b`i'
 	}
 
+**## 6.1 Industry_path sheet
 	* Industry path by quarter
 	preserve
 		collapse (sum) cap_b* tier1_b* rwa_b* eat_b* asset_b* loan_b* cl_b* loss_b* nplamt_b* (count) banks=bank_id, by(quarter)
@@ -711,6 +743,7 @@ save "$data\bank.dta", replace
 		export excel using "$xls", sheet("Industry_path", replace) firstrow(variables)
 	restore
 
+**## 6.2 Group_path and Group_summary sheets
 	* Groups: Himbara vs non-Himbara and KBMI 1-4 (same definitions as the industry figures)
 	preserve
 		gen str12 group=cond(himbara==1,"Himbara","Non-Himbara")
@@ -761,6 +794,7 @@ save "$data\bank.dta", replace
 		list group scenario car_start car_end car_min npl_end credit_loss_cap banks_car_below8 if strpos(group,"KBMI")==0, clean noobs
 	restore
 
+**## 6.3 Bank sheet (incl. risk-profile CAR counts)
 	* Bank level: CAR at start and end of horizon, cumulative losses in % of own starting capital
 	preserve
 		bys bank_id (quarter): gen cap0=cap_b1[1]
@@ -795,6 +829,7 @@ save "$data\bank.dta", replace
 		export excel using "$xls", sheet("Bank", replace) firstrow(variables)
 	restore
 
+**## 6.4 Summary sheet
 	* Summary by scenario
 	preserve
 		clear
@@ -825,6 +860,7 @@ save "$data\bank.dta", replace
 		export excel using "$xls", sheet("Summary", replace) firstrow(variables)
 		list scenario car_start car_end npl_end credit_loss_cap market_loss_cap net_income_cap banks_car_below8, clean noobs
 
+**## 6.5 Assumptions sheet
 		* Assumptions used in this run
 		clear
 		set obs 12
@@ -846,6 +882,7 @@ save "$data\bank.dta", replace
 	restore
 	di "Excel summary written to $xls"
 
+**# 7. FIX LOG (all changes vs archive/old_script/dofile_old.do)
 *****************************
 ********** FIX LOG **********
 *****************************
